@@ -1,4 +1,4 @@
-# 6. Vue.js 3 with Composition API
+# 6. Vue 3 with Composition API
 
 ## Status
 
@@ -6,43 +6,60 @@ Accepted
 
 ## Context
 
-The frontend requires a modern JavaScript framework that supports both server-side rendering (SSR) and single-page application (SPA) modes. Requirements include:
-- TypeScript support for type safety
-- Component-based architecture for reusability
-- State management for complex UI interactions
-- SEO optimization through SSR
-- Good developer experience and tooling
+The Finden system requires a modern frontend framework for the product search interface. Requirements:
+- Build interactive product filtering UI
+- Handle complex state (filters, product lists, availability)
+- Provide good performance for large product lists
+- Enable server-side rendering for SEO
+- Support component reusability
+- TypeScript integration
 
-The team has experience with Vue.js 2. Vue 3 offers significant improvements including better TypeScript support, Composition API for better code organization, and improved performance.
+Options considered:
+- **React**: Most popular, large ecosystem, JSX syntax
+- **Vue 3**: Progressive framework, composition API, template syntax
+- **Angular**: Full framework, steep learning curve
+- **Svelte**: Compiled approach, smaller ecosystem
 
 ## Decision
 
-We will use Vue.js 3.2 with Composition API exclusively:
-- TypeScript in strict mode for all components
-- Composition API instead of Options API
-- Vuex 4 for centralized state management
-- Vue Router 4 for client-side routing
-- Server-side rendering with @vue/server-renderer
-- Component structure: base components, layout components, business components
+We adopt Vue 3.2.37 with Composition API as the frontend framework.
+
+**Key factors:**
+- **Composition API**: Better code organization and reusability than Options API
+- **TypeScript support**: First-class TypeScript integration
+- **Performance**: Virtual DOM with compiler optimizations
+- **Progressive**: Can be adopted incrementally
+- **Template syntax**: Clear separation of template and logic
+- **Reactivity**: Reactive state management with ref() and reactive()
+- **SSR support**: Vue Server Renderer for SEO-friendly rendering
+- **Ecosystem**: Vue Router for routing, Vuex for state management
 
 ## Consequences
 
-**Positive:**
-- Better TypeScript integration with Composition API
-- More flexible component composition and logic reuse
-- Improved performance through Proxy-based reactivity
-- Better tree-shaking reduces bundle size
-- Cleaner separation of concerns in complex components
-- Setup script syntax reduces boilerplate
+### Positive
 
-**Negative:**
-- Breaking changes from Vue 2 require migration effort
-- Learning curve for Composition API patterns
-- Some Vue 2 libraries not compatible
-- More verbose for simple components
-- Mental model shift from Options API
+- **Developer experience**: Intuitive API with clear patterns
+- **Composition API**: Logic reuse through composables
+- **TypeScript**: Type-safe components and composables
+- **Performance**: Fast rendering and updates for product lists
+- **Template syntax**: Designers can work with templates more easily than JSX
+- **Small bundle size**: Smaller than React + ecosystem
+- **Reactivity**: Automatic UI updates when state changes
+- **Tooling**: Vue CLI provides standardized build setup
 
-**Neutral:**
-- Different testing patterns with Composition API
-- Need for consistent coding conventions
-- Ref vs Reactive requires careful consideration
+### Negative
+
+- **Smaller ecosystem**: Fewer third-party libraries than React
+- **Team familiarity**: Team may have more React experience
+- **Two APIs**: Options API and Composition API can cause confusion
+- **SSR complexity**: Server-side rendering adds setup complexity
+
+### Neutral
+
+- **Vue CLI**: Used for build configuration and development server
+- **Client-side dev**: `npm run dev` runs on port 8082
+- **SSR build**: Separate build process for server-side rendering
+- **State management**: Vuex 4.0.2 for global state
+- **Routing**: Vue Router 4.0.16 for navigation
+- **Composables**: Located in `@vueuse/core` for common patterns
+- **Build output**: Separate builds for client, server, and tool app

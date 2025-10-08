@@ -1,4 +1,4 @@
-# 10. Immutable Value Objects in Domain Layer
+# 10. Immutable Value Objects with Factory Methods
 
 ## Status
 
@@ -6,48 +6,86 @@ Accepted
 
 ## Context
 
-The domain model needs to ensure data integrity and thread safety while following Domain-Driven Design principles. Requirements include:
-- Thread-safe domain objects for concurrent operations
-- Clear expression of domain concepts
-- Prevention of invalid state
-- Easy testing and reasoning about code
-- Reduced side effects and bugs
+Domain-Driven Design emphasizes value objects for domain concepts without identity. In the Finden domain, we have many such concepts: Beschreibung (description), Produktname, Produktnummer, Preis, etc.
 
-Mutable objects can lead to unexpected state changes, especially in concurrent environments. The functional programming paradigm promotes immutability for safer code.
+Requirements for value objects:
+- Immutability to prevent accidental modification
+- Validation of business rules
+- Equality based on value, not identity
+- Type safety (not just primitive types)
+- Clear API for construction
+
+We need a consistent pattern for value objects that:
+- Enforces immutability
+- Validates invariants at construction
+- Provides clear error messages
+- Works well with Kotlin
 
 ## Decision
 
-We will implement all value objects as immutable:
-- Kotlin data classes with only `val` properties
-- Use `copy()` method for creating modified instances
-- Validation in constructors to ensure invariants
-- No setters or mutable state
-- Collections wrapped in immutable interfaces
-- Domain exceptions for invalid state attempts
+We adopt a standardized pattern for all value objects:
 
-Examples:
-- Produktnummer, Produktname, Klassifikation
-- Preis, Verfügbarkeit, Liefertag
-- All domain value objects follow this pattern
+**Pattern:**
+```kotlin
+@ValueObject
+data class Beschreibung private constructor(
+  private val value: String
+) {
+  fun asString(): String = value
+
+  companion object {
+    private const val MAX_LENGTH = 500
+
+    fun create(rawValue: String): Beschreibung {
+      if (rawValue.isBlank()) {
+        throw BeschreibungIstLeerException("Beschreibung darf nicht leer sein")
+      }
+
+      val sanitized = rawValue.sanitize()
+
+      if (sanitized.length > MAX_LENGTH) {
+        throw BeschreibungIstZuLangException("...")
+      }
+
+      return Beschreibung(sanitized)
+    }
+  }
+}
+```
+
+**Key elements:**
+- Private constructor prevents invalid construction
+- Factory method `create()` performs validation
+- Private field named `value` or semantically appropriate
+- Public accessor method `asString()`, `asInt()`, etc.
+- Domain exceptions for validation failures
+- `data class` for automatic equals/hashCode/toString
+- `@ValueObject` annotation from jMolecules
 
 ## Consequences
 
-**Positive:**
-- Thread safety guaranteed without synchronization
-- Easier reasoning about code behavior
-- No defensive copying needed
-- Reduced bugs from unexpected mutations
-- Better support for functional programming patterns
-- Natural fit with event sourcing patterns
+### Positive
 
-**Negative:**
-- More object creation and garbage collection
-- Potential performance impact for large objects
-- Learning curve for developers used to mutable objects
-- More verbose when many fields need updating
-- Memory overhead from object copying
+- **Immutability**: Constructor is private, no setters
+- **Validation**: All invariants checked at creation time
+- **Type safety**: Cannot accidentally use String where Beschreibung is expected
+- **Clear errors**: Domain exceptions explain what's wrong
+- **Testability**: Easy to create test instances via factory
+- **Equality**: data class provides value-based equality
+- **Documentation**: Pattern is self-documenting
+- **DDD alignment**: Matches DDD value object principles
 
-**Neutral:**
-- Different patterns for updating state
-- Builder pattern may be needed for complex objects
-- Careful design of object granularity important
+### Negative
+
+- **Verbosity**: More code than using primitives directly
+- **Creation overhead**: Factory method adds minimal runtime overhead
+- **Exception handling**: Callers must handle domain exceptions
+
+### Neutral
+
+- **Naming convention**: Exceptions named descriptively (e.g., `BeschreibungIstLeerException`)
+- **German domain language**: Value objects use German names matching ubiquitous language
+- **Sanitization**: Often uses `sanitize()` utility for HTML safety
+- **Validation location**: All validation in factory method, not distributed
+- **Examples**: Beschreibung, Produktname, Produktnummer, KlassifikationId, Produktfarbe
+- **ArchUnit enforcement**: ValueObjectTest ensures pattern compliance

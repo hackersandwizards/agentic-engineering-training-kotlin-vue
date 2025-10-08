@@ -6,51 +6,76 @@ Accepted
 
 ## Context
 
-The project needs automated building, testing, and deployment pipelines. Requirements include:
-- Automated testing on every commit
-- Container image building and registry
-- Multi-stage deployment pipelines
-- Integration with Kubernetes
-- Secret management
-- Parallel job execution
+The project requires automated:
+- Code compilation and testing
+- Static analysis and security scanning
+- Docker image building
+- Deployment to dev and production
+- Infrastructure provisioning
 
-Jenkins requires separate infrastructure. GitHub Actions has vendor lock-in concerns. GitLab CI is integrated with the code repository.
+We need a CI/CD system that:
+- Integrates with version control
+- Supports multiple environments
+- Provides deployment approvals
+- Manages secrets securely
+- Works with our GCP infrastructure
+
+The company uses GitLab for source control, which includes built-in CI/CD capabilities.
 
 ## Decision
 
-We will use GitLab CI for all CI/CD pipelines:
-- `.gitlab-ci.yml` for pipeline definition
-- Multi-stage pipeline: build → test → package → deploy
-- GitLab Container Registry for Docker images
-- GitLab CI variables for secrets
-- Parallel execution for frontend and backend
-- Protected branches for production deployments
-- Manual approval gates for production
+We adopt GitLab CI/CD for continuous integration and deployment.
 
-Pipeline stages:
-1. Build: Compile code, run unit tests
-2. Test: Integration tests, security scanning
-3. Package: Build Docker images
-4. Deploy: Deploy to Kubernetes environments
+**Pipeline structure:**
+- Shared job templates from central toolbox repository
+- Environment-specific jobs (dev, prod)
+- Terraform deployment for infrastructure
+- Gradle builds for backend
+- npm builds for frontend
+- Docker image builds and registry
+- Automated tests (unit, integration, architecture)
+
+**Key jobs:**
+- Terraform validation and apply (operations, MongoDB)
+- Backend build and test
+- Frontend build (client, server, SSR)
+- Security scanning (Detekt, OWASP Dependency Check)
+- Docker image build and push
+- Deployment to GKE
+
+**Configuration:**
+- `.gitlab-ci.yml` defines pipeline
+- Includes from `blume2000/ecom/toolbox/gitlab-ci-job-templates`
+- Environment variables for secrets
+- Manual approval gates for production
 
 ## Consequences
 
-**Positive:**
-- Integrated with code repository
-- No separate CI infrastructure needed
-- Built-in container registry
-- Good Kubernetes integration
-- Parallel job execution
-- Easy secret management
+### Positive
 
-**Negative:**
-- Vendor lock-in to GitLab
-- YAML configuration can become complex
-- Limited to GitLab runners capabilities
-- Debugging pipeline issues can be difficult
-- Runner resource management needed
+- **Automation**: Every commit triggers build and test
+- **Fast feedback**: Developers know quickly if changes break tests
+- **Consistent builds**: Same build process for all developers
+- **Security scanning**: Automated vulnerability detection
+- **Environment parity**: Same pipeline for dev and prod
+- **Deployment automation**: Reduces manual deployment errors
+- **Audit trail**: Complete history of deployments
+- **Shared templates**: Consistency across company projects
 
-**Neutral:**
-- Different from other CI/CD tools
-- Pipeline optimization important for speed
-- Regular runner updates needed
+### Negative
+
+- **GitLab lock-in**: Pipeline config specific to GitLab
+- **Complex configuration**: .gitlab-ci.yml can become complex
+- **Runner availability**: Depends on GitLab runner capacity
+- **Debugging difficulty**: CI failures harder to debug than local
+
+### Neutral
+
+- **Workflow**: Triggered on push or web (manual)
+- **Variables**: GRADLE_OPTS, APPLICATION_NAME, TF_VAR_*
+- **Environments**: dev (automatic), prod (manual approval)
+- **State management**: Terraform state in GCS buckets
+- **Service accounts**: Per-environment GCP credentials
+- **Secrets**: GitLab CI/CD variables for sensitive data
+- **Templates**: terraform.gitlab-ci.yml, environment.gitlab-ci.yml
+- **Rules**: Pipeline rules from shared templates

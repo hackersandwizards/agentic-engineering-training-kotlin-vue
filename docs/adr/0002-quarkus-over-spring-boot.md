@@ -1,4 +1,4 @@
-# 2. Use Quarkus Over Spring Boot
+# 2. Quarkus Over Spring Boot
 
 ## Status
 
@@ -6,42 +6,52 @@ Accepted
 
 ## Context
 
-The backend service requires a JVM-based framework that supports cloud-native development patterns. Key requirements include:
-- Fast startup times for container-based deployments
-- Low memory footprint to optimize cloud resource costs
-- Native compilation support for improved performance
-- Reactive programming model for handling high concurrent loads
-- Strong Kubernetes integration for cloud deployment
+For the backend implementation, we need to select a Java/Kotlin framework that provides:
+- Production-ready features (dependency injection, REST APIs, data access)
+- Strong Kotlin support
+- Good performance characteristics
+- Cloud-native capabilities
+- Active ecosystem and community support
 
-Spring Boot is the traditional choice with a large ecosystem, but it has higher memory consumption and slower startup times. The team evaluated both Spring Boot and Quarkus for the backend implementation.
+The main contenders are:
+- **Spring Boot**: Industry standard with extensive ecosystem
+- **Quarkus**: Cloud-native framework optimized for containers and Kubernetes
+- **Micronaut**: Compile-time dependency injection framework
+
+Spring Boot is the most mature option with the largest ecosystem, but it has higher memory footprint and slower startup times. Quarkus is designed specifically for cloud-native deployments with fast startup and low memory consumption.
 
 ## Decision
 
-We will use Quarkus 3.x as the backend framework instead of Spring Boot. The implementation will leverage:
-- Quarkus native compilation with GraalVM
-- Reactive programming with Mutiny
-- Built-in Kubernetes manifest generation
-- Quarkus extensions for MongoDB, Kafka, and REST endpoints
-- Development mode with live reload capabilities
+We select Quarkus 3.24.3 as the backend framework for Finden.
+
+Key factors in this decision:
+- **Cloud-native design**: Optimized for containers and Kubernetes deployment
+- **Performance**: Fast startup time and low memory footprint crucial for scaling
+- **Kotlin support**: First-class Kotlin support with kotlin-jvm plugin
+- **Standards-based**: Uses Jakarta EE standards (JAX-RS, CDI, Bean Validation)
+- **Developer experience**: Live reload with quarkusDev mode for fast development cycles
+- **Extension ecosystem**: Rich set of extensions for MongoDB, Kafka, Micrometer, etc.
 
 ## Consequences
 
-**Positive:**
-- Startup time reduced by 10x compared to traditional JVM applications
-- Memory footprint reduced by 50%, lowering operational costs
-- Native compilation enables sub-second startup in containers
-- Built-in Kubernetes integration simplifies deployment
-- Development mode provides excellent developer experience
-- Optimized for containerized environments
+### Positive
 
-**Negative:**
-- Smaller ecosystem compared to Spring Boot
-- Team requires training on Quarkus-specific patterns
-- Less community support and fewer third-party libraries
-- Some reflection-based libraries may not work with native compilation
-- Debugging native images can be more complex
+- **Fast startup**: Quarkus applications start in milliseconds, enabling rapid scaling
+- **Low memory**: Reduced memory footprint lowers infrastructure costs
+- **Developer productivity**: quarkusDev mode with live reload accelerates development
+- **Native compilation**: Option to compile to native executables with GraalVM (not currently used but available)
+- **Standards compliance**: Uses Jakarta EE standards for easier migration if needed
+- **Modern stack**: Designed for cloud-native patterns from the ground up
 
-**Neutral:**
-- Different configuration approach using application.yml
-- CDI-based dependency injection instead of Spring's approach
-- Testing requires Quarkus-specific test annotations
+### Negative
+
+- **Smaller ecosystem**: Fewer third-party libraries and extensions compared to Spring Boot
+- **Team familiarity**: Many Java developers are more familiar with Spring Boot
+- **Maturity**: Younger framework with potentially less battle-tested edge cases
+- **Migration complexity**: Moving to/from Spring Boot would require significant refactoring
+
+### Neutral
+
+- **Build time**: Annotation processing increases build time but enables optimization
+- **Reflection limitations**: Some dynamic features require configuration (mostly relevant for native compilation)
+- **Extension configuration**: Quarkus-specific extension configuration in application.yml
