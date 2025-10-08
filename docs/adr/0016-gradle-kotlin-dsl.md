@@ -1,4 +1,4 @@
-# 16. Gradle with Kotlin DSL for Build Management
+# 16. Gradle with Kotlin DSL
 
 ## Status
 
@@ -6,45 +6,68 @@ Accepted
 
 ## Context
 
-The backend project needs a build tool that supports Kotlin, manages dependencies, and integrates with CI/CD pipelines. Requirements include:
-- Native Kotlin support
-- Dependency management with version control
-- Multi-module project support
-- Integration with quality tools (testing, linting, security scanning)
-- IDE support
-- Build reproducibility
+The project requires a build tool that:
+- Compiles Kotlin backend code
+- Manages dependencies
+- Runs tests (unit and integration)
+- Generates Avro classes from schemas
+- Performs static analysis (Detekt)
+- Checks dependencies for vulnerabilities
+- Produces deployment artifacts
+- Works with Quarkus
 
-Maven is XML-based and verbose. Gradle with Groovy DSL lacks type safety. Gradle with Kotlin DSL provides type-safe build configuration.
+Options:
+- **Maven**: XML-based, verbose, widely used
+- **Gradle with Groovy DSL**: Dynamic, flexible
+- **Gradle with Kotlin DSL**: Type-safe, IDE support
+
+Gradle is the recommended build tool for Quarkus. Kotlin DSL provides type safety and better IDE support.
 
 ## Decision
 
-We will use Gradle with Kotlin DSL (build.gradle.kts):
-- Type-safe build configuration
-- Kotlin DSL for all build scripts
-- Platform BOM for dependency version management
-- Integration with Detekt for code quality
-- OWASP dependency check for security
-- TestContainers for integration testing
-- Avro plugin for schema generation
+We use Gradle 8.x with Kotlin DSL for the build system.
+
+**Build configuration:**
+- `build.gradle.kts` in Kotlin DSL
+- Quarkus Gradle plugin for framework integration
+- Custom tasks for separated unit/integration tests
+- Detekt plugin for code quality
+- OWASP Dependency Check for security
+- Avro plugin for schema code generation
+- JaCoCo for code coverage
+
+**Key features:**
+- Type-safe build scripts
+- IDE autocomplete and refactoring
+- Custom source sets for integration tests
+- Dependency version management
+- Gradle wrapper for version consistency
 
 ## Consequences
 
-**Positive:**
-- Type-safe build configuration with IDE support
-- Consistent language (Kotlin) for app and build
-- Powerful dependency management
-- Incremental builds improve performance
-- Rich plugin ecosystem
-- Better refactoring support
+### Positive
 
-**Negative:**
-- Slower initial build configuration parsing
-- Steeper learning curve than Maven
-- Build script debugging can be complex
-- Gradle daemon memory usage
-- Version compatibility issues possible
+- **Type safety**: Compile-time checking of build scripts
+- **IDE support**: Full autocomplete and navigation in build.gradle.kts
+- **Refactoring**: Rename refactoring works across build files
+- **Kotlin consistency**: Same language for build and application
+- **Documentation**: Types serve as documentation
+- **Plugin API**: Type-safe plugin configuration
+- **Quarkus integration**: Excellent Quarkus Gradle support
 
-**Neutral:**
-- Different from Maven conventions
-- Build cache configuration important
-- Regular Gradle wrapper updates needed
+### Negative
+
+- **Learning curve**: Kotlin DSL less familiar than Groovy DSL
+- **Build time**: Kotlin compilation of build scripts adds time
+- **Migration**: Converting Groovy to Kotlin DSL requires work
+- **Examples**: Fewer online examples in Kotlin DSL than Groovy
+
+### Neutral
+
+- **Wrapper**: gradlew ensures consistent Gradle version
+- **Custom tasks**: `unitTest`, `integrationTest` for separated test execution
+- **Source sets**: integrationTest source set for integration tests
+- **Plugins**: kotlin-jvm, allopen, noarg, quarkus, detekt, avro
+- **Dependency management**: Quarkus BOM for version consistency
+- **Repositories**: Maven Central, Confluent for Kafka/Avro
+- **JVM target**: Java 21 configured in compilerOptions

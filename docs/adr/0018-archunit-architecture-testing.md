@@ -6,49 +6,84 @@ Accepted
 
 ## Context
 
-The Onion/Hexagonal architecture requires strict enforcement of layer dependencies and architectural rules. Requirements include:
-- Automated verification of architecture rules
-- Prevention of architecture erosion
-- Clear feedback on violations
-- Integration with CI/CD pipeline
-- Documentation of architecture decisions in code
+Onion Architecture requires strict adherence to dependency rules:
+- Domain layer must not depend on outer layers
+- Value objects must be immutable
+- Repositories must have interfaces in domain
+- DTOs must not leak into domain
 
-Manual code reviews cannot consistently catch all architecture violations. Static analysis tools don't understand architectural concepts.
+Traditional code reviews can miss architectural violations. We need automated enforcement that:
+- Runs in CI/CD pipeline
+- Fails build on violations
+- Documents architectural rules
+- Prevents architectural drift
+
+Options:
+- **Code reviews only**: Manual, inconsistent, easy to miss
+- **Dependency analysis tools**: Limited rule expressiveness
+- **ArchUnit**: Expressive architecture testing for JVM
 
 ## Decision
 
-We will use ArchUnit for architecture testing:
-- Test layer dependencies (domain → application → adapter)
-- Verify package structure conventions
-- Ensure no framework dependencies in domain layer
-- Check naming conventions for components
-- Validate annotation usage
-- Run as part of integration test suite
+We adopt ArchUnit 1.4.1 for automated architecture testing.
 
-Example rules:
-- Domain layer has no external dependencies
-- Repositories are only implemented in adapter layer
-- Controllers only exist in adapter layer
-- Value objects are immutable
+**Test structure:**
+```
+src/integrationTest/kotlin/de/blume2000/finden/architecture/
+├── onion/
+│   ├── OnionTest.kt              # Main onion architecture test
+│   ├── domain/
+│   │   ├── DomainTest.kt
+│   │   └── model/
+│   │       ├── ValueObjectTest.kt
+│   │       ├── AggregateRootTest.kt
+│   │       └── RepositoryTest.kt
+│   ├── application/
+│   │   └── ApplicationServiceTest.kt
+│   └── adapter/
+│       ├── active/
+│       │   ├── ResourceTest.kt
+│       │   └── ConsumerTest.kt
+│       └── passive/
+│           ├── RepositoryTest.kt
+│           └── ProducerTest.kt
+├── DependencyRulesTest.kt
+├── GeneralCodingRulesTest.kt
+└── DependencyInjectionRulesTest.kt
+```
+
+**Key rules:**
+- Onion architecture layer dependencies
+- Value objects immutability and factory pattern
+- Repository interfaces in domain
+- No domain objects in DTOs
+- Naming conventions enforcement
 
 ## Consequences
 
-**Positive:**
-- Architecture rules enforced automatically
-- Prevents architecture erosion over time
-- Quick feedback on violations
-- Architecture documented as executable tests
-- Reduces manual review burden
-- Educates team on architecture
+### Positive
 
-**Negative:**
-- Additional test maintenance
-- Initial setup effort
-- Can slow down build
-- May require rule adjustments over time
-- Learning curve for rule definition
+- **Automated enforcement**: Architecture violations fail the build
+- **Living documentation**: Tests document architecture rules
+- **Consistency**: All developers follow same patterns
+- **Refactoring safety**: Architectural changes caught immediately
+- **Knowledge transfer**: New team members learn from test failures
+- **CI integration**: Runs on every commit
+- **Comprehensive**: Checks naming, dependencies, annotations
 
-**Neutral:**
-- Balance between strictness and flexibility needed
-- Regular review of rules importance
-- May need exceptions for specific cases
+### Negative
+
+- **Learning curve**: Writing ArchUnit tests requires learning the API
+- **Maintenance**: Architecture tests need updates when patterns change
+- **Build time**: ArchUnit analyzes all classes, adds to test time
+- **False positives**: Sometimes legitimate code violates rules
+
+### Neutral
+
+- **JUnit 5**: ArchUnit tests are JUnit 5 tests
+- **Integration tests**: Located in integrationTest source set
+- **Annotation**: `@AnalyzeClasses` defines scope
+- **Imports**: DoNotIncludeTests, DoNotIncludeArchives
+- **Package constants**: Defined in OnionTest companion object
+- **Tag**: `@Tag("integration")` for integration test execution
+- **Gradle task**: Runs with `./gradlew integrationTest`

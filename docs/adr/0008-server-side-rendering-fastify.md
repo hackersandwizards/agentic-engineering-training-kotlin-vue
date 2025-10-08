@@ -6,44 +6,71 @@ Accepted
 
 ## Context
 
-The product search interface needs excellent SEO for product discoverability and fast initial page loads for user experience. Requirements include:
-- Search engine optimization for product pages
-- Fast time-to-first-byte (TTFB)
-- Progressive enhancement from SSR to SPA
-- Efficient server-side performance
-- Support for caching strategies
+The Finden product listing needs to be:
+- SEO-friendly for search engines
+- Fast initial page load
+- Interactive after hydration
+- Integrated with platform authentication
+- Monitored and observable
 
-Client-side only rendering has poor SEO and slow initial loads. Traditional SSR frameworks like Nuxt add complexity. A lightweight Node.js server provides flexibility.
+Vue 3 applications are typically client-side rendered (CSR), which has SEO limitations. We need a solution that:
+- Renders initial HTML on the server
+- Hydrates to interactive Vue app on client
+- Handles routing on both server and client
+- Integrates with existing platform infrastructure
+
+Options:
+- **Nuxt.js**: Full-featured Vue SSR framework, opinionated
+- **Custom SSR**: More control, requires more setup
+- **Pre-rendering**: Simple but not dynamic
+- **CSR only**: Simplest but poor SEO
 
 ## Decision
 
-We will implement server-side rendering using:
-- Fastify 4.x as the Node.js web server
+We implement custom Server-Side Rendering using Fastify as the SSR server.
+
+**Architecture:**
+- Fastify TypeScript server (`src/main/frontend/ssrServer/`)
 - Vue Server Renderer for SSR
-- Hybrid approach: SSR for initial load, SPA for navigation
-- Server endpoints for health checks and metrics
-- Manifest-based asset management
-- Cache strategies for rendered pages
+- Separate builds for client and server bundles
+- Static file serving via @fastify/static
+- Metrics via fastify-metrics
+- Integration with backend API via axios
+
+**Build process:**
+1. Build client bundle: `vue-cli-service build --mode=production`
+2. Build server bundle: `SSR=true vue-cli-service build`
+3. Compile SSR server: TypeScript → `dist/ssrServer/`
+4. Run: `NODE_ENV=production node dist/ssrServer/server.js`
 
 ## Consequences
 
-**Positive:**
-- Improved SEO through server-rendered HTML
-- Faster perceived performance with quick initial render
-- Progressive enhancement supports all clients
-- Fastify provides excellent performance
-- Flexible caching strategies possible
-- Separation of concerns between SSR and API
+### Positive
 
-**Negative:**
-- Increased infrastructure complexity (Node.js server)
-- Server resources required for rendering
-- Hydration mismatches can cause issues
-- Debugging SSR issues more complex
-- Memory management on server important
-- Additional deployment artifact to manage
+- **SEO optimization**: Search engines receive fully rendered HTML
+- **Fast initial load**: HTML rendered on server, no JavaScript required for first paint
+- **Progressive enhancement**: Works without JavaScript, enhanced with it
+- **Performance control**: Custom SSR allows optimization for specific needs
+- **Fastify speed**: Fast HTTP server with low overhead
+- **Monitoring**: Built-in metrics and OpenTelemetry integration
+- **Platform integration**: Basic Auth and backend proxying
 
-**Neutral:**
-- Different error handling for server vs client
-- Need to manage server and client state
-- Bundle splitting strategy important
+### Negative
+
+- **Build complexity**: Three separate builds (client, server, SSR server)
+- **Maintenance burden**: Custom SSR requires ongoing maintenance
+- **Development workflow**: Separate dev processes for client and SSR
+- **Memory usage**: Node.js SSR server adds runtime overhead
+- **Debugging complexity**: Bugs can occur in server render or client hydration
+- **State synchronization**: Must carefully manage state between server and client
+
+### Neutral
+
+- **TypeScript**: SSR server written in TypeScript 4.7.3
+- **Fastify version**: 4.2.0 with dedicated plugins
+- **Controllers**: `produktlisteController`, `toolController`, `healthController`
+- **Metrics exporter**: Google Cloud Monitoring integration
+- **Environment config**: `.env.fastify` for SSR server configuration
+- **Development mode**: Separate `npm run serverDev` with nodemon
+- **Static files**: Served from dist directory via @fastify/static
+- **Error handling**: Custom error handler for SSR failures

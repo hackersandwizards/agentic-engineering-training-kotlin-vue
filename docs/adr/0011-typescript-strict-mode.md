@@ -1,4 +1,4 @@
-# 11. TypeScript in Strict Mode
+# 11. TypeScript with Strict Mode
 
 ## Status
 
@@ -6,45 +6,63 @@ Accepted
 
 ## Context
 
-The frontend codebase needs type safety to prevent runtime errors and improve developer productivity. Requirements include:
-- Catch type errors at compile time
-- Better IDE support and autocomplete
-- Self-documenting code through types
-- Refactoring safety
-- Integration with Vue.js 3
+The frontend codebase uses Vue 3 and requires type safety to:
+- Catch errors at compile time
+- Improve IDE autocomplete and refactoring
+- Document component APIs
+- Prevent runtime type errors
+- Support large codebase maintenance
 
-JavaScript's dynamic typing leads to runtime errors that could be caught at compile time. TypeScript provides optional static typing for JavaScript.
+Options:
+- **JavaScript**: No type checking, maximum flexibility
+- **TypeScript with loose config**: Gradual typing, easy adoption
+- **TypeScript with strict mode**: Maximum type safety, more upfront work
+
+The SSR server is particularly critical as server-side errors affect all users.
 
 ## Decision
 
-We will use TypeScript in strict mode for all frontend code:
-- `strict: true` in tsconfig.json
-- No implicit any types allowed
-- Strict null checks enabled
-- All Vue components written in TypeScript
-- Interfaces for all props and emits
-- Type definitions for API responses
-- Typed Vuex store and modules
+We adopt TypeScript 4.7.3 with strict mode enabled for all frontend code.
+
+**Configuration:**
+- Strict mode enabled in tsconfig.json
+- No implicit any
+- Strict null checks
+- Strict function types
+- All frontend components in TypeScript
+- SSR server in TypeScript
+- Type definitions for all dependencies
+
+**Enforcement:**
+- TypeScript compilation required for build
+- ESLint with TypeScript parser
+- Pre-commit hooks check TypeScript errors
 
 ## Consequences
 
-**Positive:**
-- Catches type errors at compile time
-- Excellent IDE support with autocomplete
-- Self-documenting through type definitions
-- Safer refactoring with compile-time checks
-- Better collaboration through explicit contracts
-- Reduced bugs in production
+### Positive
 
-**Negative:**
-- Additional build step and complexity
-- Learning curve for TypeScript features
-- More verbose code with type annotations
-- Some JavaScript libraries lack type definitions
-- Compilation time increases
-- Strict mode can be initially frustrating
+- **Early error detection**: Type errors caught at compile time
+- **Better IDE support**: Autocomplete, refactoring, navigation
+- **Self-documenting**: Types serve as documentation
+- **Refactoring confidence**: Types catch breaking changes
+- **Null safety**: Strict null checks prevent undefined errors
+- **API contracts**: Clear interfaces between components
+- **SSR reliability**: Server-side code benefits most from type safety
 
-**Neutral:**
-- Need for consistent typing patterns
-- Balance between type safety and flexibility
-- Type definition maintenance required
+### Negative
+
+- **Initial overhead**: More time writing type annotations
+- **Learning curve**: Team members need TypeScript knowledge
+- **Build time**: Type checking adds to compilation time
+- **Third-party types**: Some libraries have incomplete type definitions
+- **Strictness**: Strict mode requires more type annotations
+
+### Neutral
+
+- **Version**: TypeScript 4.7.3 (not latest, but stable)
+- **Compiler**: ts-jest for testing, tsc for SSR server
+- **Configuration**: Separate tsconfig for SSR server
+- **Vue integration**: Vue 3 has excellent TypeScript support
+- **Type checker**: fork-ts-checker-webpack-plugin for parallel type checking
+- **ESLint**: @typescript-eslint/parser and plugin for linting

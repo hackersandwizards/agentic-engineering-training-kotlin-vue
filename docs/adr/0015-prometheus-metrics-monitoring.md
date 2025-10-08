@@ -1,4 +1,4 @@
-# 15. Prometheus Metrics and Monitoring
+# 15. Prometheus Metrics and Google Cloud Monitoring
 
 ## Status
 
@@ -6,45 +6,67 @@ Accepted
 
 ## Context
 
-The system needs comprehensive monitoring for performance, availability, and business metrics. Requirements include:
-- Real-time performance monitoring
-- Custom business metrics
-- Alert generation for issues
-- Historical data for trend analysis
-- Integration with Kubernetes
-- Standardized metrics format
+Production applications require observability to:
+- Track system health and performance
+- Alert on anomalies
+- Diagnose performance issues
+- Capacity planning
+- SLA monitoring
 
-Various monitoring solutions exist. Prometheus is the de facto standard for Kubernetes environments and provides powerful querying capabilities.
+We need a metrics system that:
+- Integrates with GCP monitoring
+- Provides Prometheus-compatible metrics
+- Supports custom business metrics
+- Has minimal performance overhead
+- Works with Kubernetes
 
 ## Decision
 
-We will use Prometheus with Micrometer for metrics collection:
-- Micrometer for metrics abstraction in Quarkus
-- Prometheus format for metrics exposition
-- Metrics endpoints: `/q/metrics` (backend), `/metrics` (frontend)
-- Grafana for visualization and dashboards
-- Standard metrics: RED (Rate, Errors, Duration) and USE (Utilization, Saturation, Errors)
-- Custom business metrics for search queries, filter usage
-- Stackdriver integration for GCP
+We implement dual metrics export using Micrometer:
+- **Prometheus**: For Kubernetes-native scraping
+- **Google Cloud Monitoring (Stackdriver)**: For GCP integration
+
+**Architecture:**
+- Micrometer as metrics abstraction layer
+- Prometheus registry for `/q/metrics` endpoint
+- Stackdriver registry for GCP Cloud Monitoring
+- Custom metrics via MetricsProvider
+- Request metrics via MetricsFilters
+- Metrics augmentation via MetricsAugmentor
+
+**Metrics categories:**
+- HTTP request metrics (count, duration, status)
+- JVM metrics (memory, threads, GC)
+- Database query metrics
+- Custom business metrics (products filtered, search counts)
 
 ## Consequences
 
-**Positive:**
-- Industry standard for Kubernetes monitoring
-- Powerful PromQL query language
-- Excellent Grafana integration
-- Pull-based model suits Kubernetes
-- Time-series data enables trend analysis
-- Low overhead metrics collection
+### Positive
 
-**Negative:**
-- Metric cardinality must be managed carefully
-- Storage requirements for time-series data
-- Learning curve for PromQL
-- Additional infrastructure to maintain
-- Need to avoid high-cardinality labels
+- **Kubernetes integration**: Prometheus scraping standard in Kubernetes
+- **GCP integration**: Native Cloud Monitoring for dashboards and alerting
+- **Flexibility**: Micrometer abstraction allows changing exporters
+- **Rich metrics**: Automatic HTTP, JVM, and database metrics
+- **Custom metrics**: Easy to add domain-specific metrics
+- **Performance**: Efficient metric collection and export
+- **Grafana compatible**: Prometheus metrics work with Grafana
+- **Alerting**: GCP Cloud Monitoring supports alerting
 
-**Neutral:**
-- Different from traditional APM solutions
-- Requires careful metric design
-- Alert rule management needed
+### Negative
+
+- **Dual export**: Both Prometheus and Stackdriver add overhead
+- **Configuration**: Need to configure both exporters
+- **Cost**: GCP Cloud Monitoring has usage-based costs
+- **Cardinality**: Must be careful with high-cardinality labels
+
+### Neutral
+
+- **Micrometer**: Core metrics abstraction
+- **Prometheus endpoint**: `/q/metrics` for scraping
+- **Stackdriver config**: StackdriverConfigFactory customizes export
+- **Resource type**: generic_node for GCP resource mapping
+- **Disabled in dev**: Stackdriver export disabled locally
+- **Metrics filters**: MetricsFilters augments HTTP metrics
+- **Additional tags**: Team, zone, environment added to all metrics
+- **Dashboard**: infrastructure/operations/my-little-dashboard.json

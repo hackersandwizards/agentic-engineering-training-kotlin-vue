@@ -1,4 +1,4 @@
-# 9. Kubernetes Deployment on Google Cloud Platform
+# 9. Kubernetes on GCP Deployment
 
 ## Status
 
@@ -6,46 +6,66 @@ Accepted
 
 ## Context
 
-The application needs cloud-native deployment with automatic scaling, self-healing, and multi-region capabilities. Requirements include:
-- Container orchestration for microservices
-- Automatic scaling based on load
-- Zero-downtime deployments
+Finden requires a production deployment strategy that provides:
+- Scalability to handle varying traffic
+- High availability and reliability
+- Easy deployment and rollback
 - Infrastructure as code
-- Integrated monitoring and logging
-- Cost-effective resource utilization
+- Integration with company cloud platform
+- Monitoring and observability
 
-Various cloud providers and orchestration platforms were evaluated. GCP provides good Kubernetes integration with GKE, and the team has GCP experience.
+The company has standardized on Google Cloud Platform (GCP) for infrastructure. We need to decide:
+- Container orchestration platform
+- Infrastructure provisioning approach
+- CI/CD integration
+- Environment management (dev, prod)
 
 ## Decision
 
-We will deploy on Google Kubernetes Engine (GKE) with:
+We deploy Finden to Google Kubernetes Engine (GKE) on GCP, managed via Terraform and GitLab CI/CD.
+
+**Infrastructure:**
+- Kubernetes for container orchestration
+- GKE managed Kubernetes clusters
 - Terraform for infrastructure as code
-- Separate namespaces for backend and frontend
-- Horizontal Pod Autoscaling based on CPU/memory
-- Node pools with different configurations for workloads
-- Google Cloud Load Balancer for ingress
-- Workload Identity for service authentication
-- Multi-zone deployment in europe-west3
+- GitLab CI/CD for automated deployment
+- Separate dev and prod environments
+- Google Cloud Monitoring for observability
+
+**Deployment artifacts:**
+- Backend: Quarkus fat JAR in container
+- Frontend SSR: Node.js server in container
+- MongoDB Atlas: Managed database service
 
 ## Consequences
 
-**Positive:**
-- Automatic scaling handles load variations
-- Self-healing through pod restarts and node repairs
-- Infrastructure as code enables reproducible deployments
-- Rolling updates provide zero-downtime deployments
-- Good integration with GCP services
-- Cost optimization through preemptible nodes
+### Positive
 
-**Negative:**
-- Kubernetes complexity requires specialized knowledge
-- Vendor lock-in to GCP services
-- Debugging distributed systems is challenging
-- Network policies and security require careful configuration
-- Cost can escalate without proper monitoring
-- State management for stateful services complex
+- **Scalability**: Kubernetes horizontal pod autoscaling for traffic spikes
+- **Reliability**: Self-healing, rolling updates, health checks
+- **Cloud-native**: Leverages GCP managed services (GKE, Stackdriver)
+- **Infrastructure as code**: Terraform makes infrastructure reproducible
+- **GitOps**: Git commits trigger infrastructure changes
+- **Environment parity**: Dev and prod use same Kubernetes configs
+- **Monitoring**: Integrated with Google Cloud Operations Suite
+- **Resource efficiency**: Containers share resources, fast startup
 
-**Neutral:**
-- Different deployment patterns from traditional servers
-- Monitoring and logging aggregation needed
-- Secret management requires careful consideration
+### Negative
+
+- **Complexity**: Kubernetes has steep learning curve
+- **Operational overhead**: Cluster management requires DevOps expertise
+- **Cost**: GKE nodes and managed services have ongoing costs
+- **Debugging**: Troubleshooting distributed systems is complex
+- **Local development**: Docker Compose for local, Kubernetes for production (environment differences)
+
+### Neutral
+
+- **GitLab CI**: `.gitlab-ci.yml` defines deployment pipeline
+- **Terraform directories**: `infrastructure/operations/`, `infrastructure/mongo/`
+- **Environment variables**: GitLab CI variables for sensitive data
+- **Service accounts**: GCP service accounts for deployment authentication
+- **Container registry**: GitLab container registry
+- **Quarkus container**: Fast JAR packaging for quick startup
+- **Health endpoints**: `/q/health` for Kubernetes liveness/readiness probes
+- **Metrics endpoint**: `/q/metrics` for Prometheus scraping
+- **Network**: GCP VPC with private networking

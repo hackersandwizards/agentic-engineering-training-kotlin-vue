@@ -1,4 +1,4 @@
-# 17. TestContainers for Integration Testing
+# 17. Testcontainers for Integration Testing
 
 ## Status
 
@@ -6,45 +6,69 @@ Accepted
 
 ## Context
 
-Integration tests need to verify the system's interaction with external dependencies like MongoDB and Kafka. Requirements include:
-- Realistic test environments
-- Isolated test execution
-- Reproducible test conditions
-- CI/CD pipeline compatibility
-- No shared test infrastructure
-- Fast test execution
+Integration tests need to verify the application works correctly with real infrastructure:
+- MongoDB database operations
+- Kafka message consumption
+- Repository implementations
+- API endpoints with database
 
-Mocking external dependencies doesn't catch integration issues. Shared test databases cause test interference. In-memory substitutes don't match production behavior.
+Options for integration testing:
+- **Mocks**: Fast but don't test real integration
+- **Shared test environment**: Slow, flaky, state pollution
+- **Embedded databases**: Limited to specific technologies
+- **Testcontainers**: Real Docker containers per test
+
+We need integration tests that:
+- Use real MongoDB and Kafka
+- Run in CI/CD pipeline
+- Are isolated (no shared state)
+- Are reproducible
+- Are reasonably fast
 
 ## Decision
 
-We will use TestContainers for integration testing:
-- MongoDB TestContainer for database tests
-- Kafka TestContainer for messaging tests
-- Automatic container lifecycle management
-- Isolated containers per test class
-- Real MongoDB and Kafka instances
-- Configuration through `@QuarkusTest` and `@TestProfile`
+We adopt Testcontainers for integration testing.
+
+**Configuration:**
+- MongoDB container: `org.testcontainers:mongodb:1.21.3`
+- Kafka container: `org.testcontainers:kafka:1.21.3`
+- Separate source set: `src/integrationTest/kotlin`
+- Tagged with `@Tag("integration")`
+- Quarkus test support: `@QuarkusTest` with Testcontainers
+- Gradle task: `./gradlew integrationTest`
+
+**Test structure:**
+- Unit tests: Fast, mocked dependencies, `@Tag("unit")`
+- Integration tests: Real containers, end-to-end, `@Tag("integration")`
+- Architecture tests: ArchUnit, in integration test source set
 
 ## Consequences
 
-**Positive:**
-- Tests run against real dependencies
-- Complete test isolation
-- No test data contamination
-- Reproducible across environments
-- Catches real integration issues
-- Works in CI/CD pipelines
+### Positive
 
-**Negative:**
-- Slower than unit tests
-- Requires Docker installation
-- More resource intensive
-- Container startup time overhead
-- Potential flakiness from container issues
-- Debugging can be more complex
+- **Real integration**: Tests use actual MongoDB and Kafka, not mocks
+- **Isolation**: Each test class gets fresh containers
+- **Reproducibility**: Same containers locally and in CI
+- **No setup required**: Containers started automatically
+- **Version control**: Container versions match production
+- **CI/CD friendly**: Works in any environment with Docker
+- **Cleanup**: Containers automatically removed after tests
 
-**Neutral:**
-- Different test patterns required
-- Container version management needed
-- Network configuration considerations
+### Negative
+
+- **Requires Docker**: Cannot run without Docker daemon
+- **Slower than mocks**: Container startup adds 10-30 seconds
+- **Resource usage**: Containers require CPU and memory
+- **CI environment**: CI runners need Docker support
+- **Flakiness**: Network issues can cause occasional failures
+
+### Neutral
+
+- **Separate source set**: integrationTest keeps tests organized
+- **Gradle tasks**: `unitTest` (fast) and `integrationTest` (slow)
+- **Tag-based**: JUnit tags separate test types
+- **Quarkus integration**: Quarkus automatically uses Testcontainers
+- **Test database**: finden-test database name
+- **Coverage**: JaCoCo coverage from both unit and integration tests
+- **MongoDB version**: mongo:4.4 container matches production
+- **Kafka version**: wurstmeister/kafka matches local docker-compose
