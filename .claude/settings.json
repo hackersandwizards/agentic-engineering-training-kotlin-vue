@@ -1,11 +1,4 @@
 {
-  "permissions": {
-    "allow": [
-      "mcp__sequential__sequentialthinking",
-      "WebSearch"
-    ],
-    "deny": []
-  },
   "statusLine": {
     "type": "command",
     "command": ".claude/statusline.sh",
@@ -34,5 +27,6 @@
         ]
       }
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true
 }
