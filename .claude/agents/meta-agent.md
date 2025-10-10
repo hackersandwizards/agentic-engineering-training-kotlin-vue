@@ -3,7 +3,7 @@ name: meta-agent
 description: Generates a new, complete Claude Code sub-agent configuration file from a user's description. Use this to create new agents. Use this Proactively when the user asks you to create a new sub agent.
 tools: Read, Glob, Grep, Bash, Task, TodoWrite, WebFetch, MultiEdit
 color: cyan
-model: opus
+model: sonnet
 ---
 
 # Purpose
@@ -35,7 +35,7 @@ You must generate a single Markdown code block containing the complete agent def
 name: <generated-agent-name>
 description: <generated-action-oriented-description>
 tools: <inferred-tool-1>, <inferred-tool-2>
-model: haiku | sonnet | opus <default to sonnet unless otherwise specified>
+model: haiku | sonnet | sonnet <default to sonnet unless otherwise specified>
 ---
 
 # Purpose
