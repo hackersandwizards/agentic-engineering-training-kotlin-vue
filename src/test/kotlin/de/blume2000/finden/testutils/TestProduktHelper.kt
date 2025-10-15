@@ -1,5 +1,6 @@
 package de.blume2000.finden.testutils
 
+import de.blume2000.finden.domain.model.produkte.produkt.Beschreibung
 import de.blume2000.finden.domain.model.produkte.produkt.Blumensorte
 import de.blume2000.finden.domain.model.produkte.produkt.Klassifikation
 import de.blume2000.finden.domain.model.produkte.produkt.KlassifikationId
@@ -34,6 +35,7 @@ fun erstelleProdukt(
   farben: List<Produktfarbe> = emptyList(),
   blumensorten: List<Blumensorte> = emptyList(),
   verfügbarkeiten: List<ProduktVerfügbarkeit> = emptyList(),
+  beschreibung: String? = null,
 ) = Produkt(
   nummer = Produktnummer(nummer),
   name = Produktname(name),
@@ -45,4 +47,5 @@ fun erstelleProdukt(
   farben = farben,
   blumensorten = blumensorten,
   verfügbarkeiten = verfügbarkeiten,
+  beschreibung = beschreibung?.let { Beschreibung.create(it) },
 )

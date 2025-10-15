@@ -31,6 +31,7 @@ import strikt.api.expectThat
 import strikt.assertions.containsSequence
 import strikt.assertions.hasSize
 import strikt.assertions.isEqualTo
+import strikt.assertions.isNull
 import java.math.BigDecimal
 import java.util.Currency
 import java.util.Locale
@@ -415,5 +416,66 @@ class ProduktMongoRepositoryTest {
       repository.ladeVerfügbareProdukte(filterStrauss, UserProdukteFilter.NEUTRALER_FILTER, leererSortierung).gebeMirAlleProdukte(),
       containsInAnyOrder(straussProdukt1, straussProdukt2)
     )
+  }
+
+  @Test
+  internal fun `ProduktMongoRepository speichert und lädt Produkt mit Beschreibung`() {
+    // Given
+    val beschreibungValue = "Wunderschöne rote Rosen aus Holland"
+    val produkt = erstelleProdukt(
+      nummer = "ROSEN123",
+      beschreibung = beschreibungValue,
+      verfügbarkeiten = erstelleVerfügbarkeiten()
+    )
+
+    // When
+    repository.speicherProdukt(produkt)
+    val filter = CmsProdukteFilter(
+      emptyList(),
+      null,
+      null,
+      listOf(produkt.nummer),
+      ProduktnummernVerwendung.SELEKTIONSBASIS,
+      null
+    )
+    val geladeneProdukte = repository.ladeVerfügbareProdukte(
+      filter,
+      UserProdukteFilter.NEUTRALER_FILTER,
+      ProdukteSortierung()
+    ).gebeMirAlleProdukte()
+
+    // Then
+    expectThat(geladeneProdukte).hasSize(1)
+    expectThat(geladeneProdukte.first().beschreibung?.asString()).isEqualTo(beschreibungValue)
+  }
+
+  @Test
+  internal fun `ProduktMongoRepository speichert und lädt Produkt ohne Beschreibung für Rückwärtskompatibilität`() {
+    // Given
+    val produkt = erstelleProdukt(
+      nummer = "OHNE123",
+      beschreibung = null,
+      verfügbarkeiten = erstelleVerfügbarkeiten()
+    )
+
+    // When
+    repository.speicherProdukt(produkt)
+    val filter = CmsProdukteFilter(
+      emptyList(),
+      null,
+      null,
+      listOf(produkt.nummer),
+      ProduktnummernVerwendung.SELEKTIONSBASIS,
+      null
+    )
+    val geladeneProdukte = repository.ladeVerfügbareProdukte(
+      filter,
+      UserProdukteFilter.NEUTRALER_FILTER,
+      ProdukteSortierung()
+    ).gebeMirAlleProdukte()
+
+    // Then
+    expectThat(geladeneProdukte).hasSize(1)
+    expectThat(geladeneProdukte.first().beschreibung).isNull()
   }
 }

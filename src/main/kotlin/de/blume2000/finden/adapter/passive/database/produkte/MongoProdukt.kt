@@ -1,6 +1,7 @@
 package de.blume2000.finden.adapter.passive.database.produkte
 
 import de.blume2000.finden.adapter.passive.database.produkte.MongoProdukt.Companion.MONGO_COLLECTION
+import de.blume2000.finden.domain.model.produkte.produkt.Beschreibung
 import de.blume2000.finden.domain.model.produkte.produkt.Bestellschluss
 import de.blume2000.finden.domain.model.produkte.produkt.Klassifikation
 import de.blume2000.finden.domain.model.produkte.produkt.KlassifikationId
@@ -34,6 +35,7 @@ data class MongoProdukt @BsonCreator constructor(
   @param:BsonProperty("farben") val farben: List<MongoProduktfarbe>?,
   @param:BsonProperty("blumensorten") val blumensorten: List<MongoBlumensorte>?,
   @param:BsonProperty("verfuegbarkeiten") val verfuegbarkeiten: List<MongoVerfügbarkeit>?,
+  @param:BsonProperty("beschreibung") val beschreibung: String?,
 ) : PanacheMongoEntityBase() {
   fun nachProdukt(): Produkt {
     return Produkt(
@@ -74,7 +76,8 @@ data class MongoProdukt @BsonCreator constructor(
         }
       } else {
         emptyList()
-      }
+      },
+      beschreibung = this.beschreibung?.let { Beschreibung.create(it) }
     )
   }
 
@@ -100,7 +103,8 @@ data class MongoProdukt @BsonCreator constructor(
             liefertag = it.liefertag.value,
             bestellschlussUTC = Date.from(it.bestellschluss.value.toInstant())
           )
-        }
+        },
+        beschreibung = produkt.beschreibung?.asString()
       )
     }
   }
