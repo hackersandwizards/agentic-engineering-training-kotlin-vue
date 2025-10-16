@@ -111,7 +111,7 @@ internal class BeschreibungTest {
     val beschreibung2 = Beschreibung("Beschreibung 2")
 
     // Then
-    expectThat(beschreibung1).isEqualTo(beschreibung2).not()
+    expectThat(beschreibung1 != beschreibung2).isEqualTo(true)
   }
 
   @Test
