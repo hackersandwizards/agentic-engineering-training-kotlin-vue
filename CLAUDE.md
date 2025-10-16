@@ -18,6 +18,7 @@ Complete product search service: Vue.js frontend + Quarkus/Kotlin backend | Self
 **Available MCP Servers**:
 
 - **🎯 jetbrains**: IDE integration, file operations, code analysis, refactoring
+- **🔍 explore**: Fast codebase exploration, file discovery, code search (default agent)
 - **📚 context7**: Library documentation, framework patterns, best practices
 - **🧠 sequential**: Complex analysis, systematic debugging, multi-step reasoning
 - **📊 taskmaster-ai**: Project management, task breakdown, estimation
@@ -25,9 +26,11 @@ Complete product search service: Vue.js frontend + Quarkus/Kotlin backend | Self
 **MCP Server Usage Rules**:
 
 - **ALWAYS** use `mcp__jetbrains__*` tools for file/folder operations, especially editing and writing when available
+- **Explore** for fast codebase discovery (file patterns, code search, structure questions)
 - **Context7** for Quarkus/Vue.js documentation and patterns
 - **Sequential** for complex debugging, system analysis, TDD workflows
 - **TaskMaster** for project management and task breakdown
+- **Integration Pattern**: Explore agent for initial discovery → Specialized subagents for deep analysis
 
 ## 🤖 Sub-Agent System Integration
 
@@ -324,6 +327,40 @@ npm run unitTest -- -u             # Update test snapshots
 
 **Complete Workflow**: See `.claude/agents/workflow-orchestrator.md` for detailed 4-phase TDD process, quality gates, and systematic progression guidelines.
 
+### Explore Agent Integration Pattern
+
+**When to Use Explore Agent (BEFORE Specialized Subagents)**:
+
+The Explore agent provides fast, efficient codebase reconnaissance for:
+
+1. **Initial Discovery** - Questions about codebase structure, file locations, patterns
+2. **Context Gathering** - Understanding how existing features are organized
+3. **Pattern Discovery** - Finding similar implementations before deep analysis
+4. **Pre-Research** - Preparing context for specialized subagents
+
+**Integration Workflow**:
+
+```
+User Question about Codebase
+  ↓
+Use Explore Agent (quick/medium thoroughness)
+  ↓
+Findings → File list, basic structure understanding
+  ↓
+Needed Deep Analysis?
+  ├─ Pattern Analysis? → Use pattern-analyzer subagent with discovered files
+  ├─ Architecture Validation? → Use architecture-advisor with discovered context
+  ├─ Documentation Research? → Use documentation-researcher with discovered gaps
+  └─ No Deep Analysis? → Exploration complete
+```
+
+**Thoroughness Levels**:
+- **quick**: <10 files, basic patterns, "What files exist?" questions
+- **medium**: 10-50 files, moderate search, "How is X structured?" questions
+- **very thorough**: >50 files, comprehensive analysis, "Show me all uses of X"
+
+**NOT a Replacement for Specialized Agents**: Explore excels at discovery; pattern-analyzer, documentation-researcher, and others excel at deep analysis, compliance validation, and strategic guidance. Use together, not instead of.
+
 ### Sub-Agent Integration
 
 **Workflow-Orchestrator Managed**: All subagent coordination is handled by workflow-orchestrator
@@ -362,17 +399,23 @@ npm run unitTest -- -u             # Update test snapshots
 ```
 Development Task? → workflow-orchestrator subagent (MANDATORY)
   ↓
+Initial Codebase Discovery? → Explore agent (quick reconnaissance)
+  ↓
 File Operations? → JetBrains MCP
-Pattern Analysis? → pattern-analyzer agent (MANDATORY via orchestrator)
-Documentation Research? → documentation-researcher agent (MANDATORY via orchestrator)
-Test Strategy & Coverage? → quality-assurance-expert agent (MANDATORY via orchestrator)
-Refactoring & Code Quality? → refactoring-advisor agent (via orchestrator during REFACTOR phase)
-Implementation Review? → review-critic agent (MANDATORY via orchestrator)
-Complex Analysis? → Sequential MCP
-Project Management? → TaskMaster CLI (integrated in orchestrator workflow)
+  ↓
+Deep Analysis Needed?
+  ├─ Pattern Analysis? → pattern-analyzer agent (MANDATORY via orchestrator)
+  ├─ Documentation Research? → documentation-researcher agent (MANDATORY via orchestrator)
+  ├─ Test Strategy & Coverage? → quality-assurance-expert agent (MANDATORY via orchestrator)
+  ├─ Refactoring & Code Quality? → refactoring-advisor agent (via orchestrator during REFACTOR phase)
+  ├─ Implementation Review? → review-critic agent (MANDATORY via orchestrator)
+  ├─ Architecture Validation? → architecture-advisor agent (MANDATORY via orchestrator)
+  ├─ Complex Analysis? → Sequential MCP
+  └─ Project Management? → TaskMaster CLI (integrated in orchestrator workflow)
 ```
 
 **Primary Rule**: ALWAYS start with workflow-orchestrator subagent for systematic guidance
+**Exploration Pattern**: Use Explore agent for quick discovery before invoking specialized subagents
 
 ### Git Workflow
 
@@ -407,10 +450,28 @@ Project Management? → TaskMaster CLI (integrated in orchestrator workflow)
 
 1. Stop coding
 2. Use debugger/logs
-3. `mcp__jetbrains__get_file_problems` → Analyze issues
-4. `mcp__jetbrains__search_in_files_by_text` → Find patterns
-5. Write minimal test
-6. Ask for help
+3. **Explore agent** → Quick codebase reconnaissance (file patterns, structure)
+4. `mcp__jetbrains__get_file_problems` → Analyze issues
+5. `mcp__jetbrains__search_in_files_by_text` → Find patterns
+6. Write minimal test
+7. Ask for help
+
+### Explore Agent Quick Reference
+
+**Use Explore Agent For:**
+- "Where are all the Vue components for search functionality?"
+- "Find all API endpoints that handle product queries"
+- "What's the structure of the backend service packages?"
+- "Show me all test files for the frontend"
+- "How are error handlers implemented across the codebase?"
+
+**Example Usage Pattern:**
+```
+Question: "How are API endpoints structured in this codebase?"
+→ Use Explore (medium thoroughness) to discover src/**/*Controller.kt files
+→ Analyze patterns with pattern-analyzer for conformance
+→ Validate architecture with architecture-advisor
+```
 
 ### When to Escalate (>30 min stuck)
 
