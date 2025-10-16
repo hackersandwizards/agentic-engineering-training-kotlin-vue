@@ -1,5 +1,6 @@
 package de.blume2000.finden.testutils
 
+import de.blume2000.finden.domain.model.produkte.produkt.Beschreibung
 import de.blume2000.finden.domain.model.produkte.produkt.Blumensorte
 import de.blume2000.finden.domain.model.produkte.produkt.Klassifikation
 import de.blume2000.finden.domain.model.produkte.produkt.KlassifikationId
@@ -31,6 +32,7 @@ fun erstelleProdukt(
     "https://res.cloudinary.com/blume2000/image/upload/c_fill,f_auto,h_%h%,q_auto,w_%w%"
   ),
   pdsUrl: ProduktdetailseiteUrlSeoName = ProduktdetailseiteUrlSeoName("zurpds"),
+  beschreibung: String = "Schöne Blumen für jeden Anlass",
   farben: List<Produktfarbe> = emptyList(),
   blumensorten: List<Blumensorte> = emptyList(),
   verfügbarkeiten: List<ProduktVerfügbarkeit> = emptyList(),
@@ -42,6 +44,7 @@ fun erstelleProdukt(
   klassifikation = klassifikation,
   bildUrl = produktbildUrl,
   pdsUrlSeoName = pdsUrl,
+  beschreibung = Beschreibung(beschreibung),
   farben = farben,
   blumensorten = blumensorten,
   verfügbarkeiten = verfügbarkeiten,

@@ -13,6 +13,7 @@ data class Produkt(
   val klassifikation: Klassifikation,
   val bildUrl: ProduktbildUrl,
   val pdsUrlSeoName: ProduktdetailseiteUrlSeoName,
+  val beschreibung: Beschreibung,
   val farben: List<Produktfarbe>,
   val blumensorten: List<Blumensorte>,
   val verfügbarkeiten: List<ProduktVerfügbarkeit>
