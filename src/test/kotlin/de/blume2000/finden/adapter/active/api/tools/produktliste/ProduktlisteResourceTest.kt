@@ -3,6 +3,7 @@ package de.blume2000.finden.adapter.active.api.tools.produktliste
 import com.mongodb.client.MongoClient
 import de.blume2000.finden.adapter.passive.database.produkte.MongoProdukt
 import de.blume2000.finden.adapter.passive.database.produkte.ProduktMongoRepository
+import de.blume2000.finden.domain.model.produkte.produkt.Beschreibung
 import de.blume2000.finden.domain.model.produkte.produkt.Bestellschluss
 import de.blume2000.finden.domain.model.produkte.produkt.Klassifikation
 import de.blume2000.finden.domain.model.produkte.produkt.KlassifikationId
@@ -134,7 +135,9 @@ internal class ProduktlisteResourceTest {
         )
       ),
       Klassifikation(KlassifikationId("11"), KlassifikationName("Strauss")), ProduktbildUrl("https://blumenbild.de"),
-      ProduktdetailseiteUrlSeoName("ding"), listOf(), listOf(),
+      ProduktdetailseiteUrlSeoName("ding"),
+      Beschreibung("Ein schönes Produkt"),
+      listOf(), listOf(),
       verfügbarkeiten = listOf(nächstmöglicheVerfügbarkeit, letztmöglicheVerfügbarkeit)
     )
 

@@ -74,7 +74,7 @@ When invoked, you must rigorously follow the Daily TDD + Task Management + MCP S
 **Required Actions** (parallel execution recommended):
 
 ### 2.1 Initial Exploration (Sequential)
-1. **Quick Codebase Discovery**: Invoke **Explore agent** (medium thoroughness) → Fast reconnaissance of file structure and patterns
+1. **Quick Codebase Discovery**: Invoke **Explore subagent** (medium thoroughness) → Fast reconnaissance of file structure and patterns
    - Find relevant files matching task requirements
    - Understand codebase organization and existing patterns
    - Prepare context for Phase 2.2 specialized subagents
