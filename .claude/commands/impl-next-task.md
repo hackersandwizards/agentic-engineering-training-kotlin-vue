@@ -15,7 +15,7 @@ Task --subagent_type workflow-orchestrator --prompt "Analyze current project sta
 
 **Why Orchestrator First:**
 - Provides systematic 4-phase development process
-- Ensures proper subagent coordination sequence  
+- Ensures proper subagent coordination sequence
 - Enforces quality gates and completion criteria
 - Prevents workflow inefficiencies and anti-patterns
 - Guarantees 100/100 quality standard compliance
@@ -33,10 +33,12 @@ The workflow-orchestrator will guide you through:
 - Requirements review and validation
 - Task activation and persona selection
 
-#### **Phase 2: Code Analysis & Research (Mandatory Subagents)**
-- **documentation-researcher** → Internal docs priority, ADRs, architectural decisions
-- **pattern-analyzer** → Existing code patterns, conventions, conformance guidelines  
-- **architecture-advisor** → CUPID compliance, SCS patterns, design validation
+#### **Phase 2: Code Analysis & Research (Explore + Mandatory Subagents)**
+- **Phase 2.1**: Explore subagent → Fast codebase reconnaissance, file discovery, pattern location
+- **Phase 2.2**: Mandatory subagents (with Explore context):
+  - **documentation-researcher** → Internal docs priority, ADRs, architectural decisions
+  - **pattern-analyzer** → Existing code patterns, conventions, conformance guidelines
+  - **architecture-advisor** → CUPID compliance, SCS patterns, design validation
 - Structure exploration and issue identification
 
 #### **Phase 3: TDD Implementation (Rigorous Cycle)**
@@ -59,16 +61,20 @@ The workflow-orchestrator will guide you through:
 
 The workflow-orchestrator manages all subagent coordination including:
 
+- **Discovery Agent** (Phase 2.1):
+  - `explore` → Fast codebase reconnaissance before specialized analysis
+
 - **Mandatory Subagents** (enforced at appropriate phases):
-  - `documentation-researcher` 
-  - `pattern-analyzer`
-  - `architecture-advisor` 
-  - `quality-assurance-expert`
-  - `review-critic`
+  - `documentation-researcher` (Phase 2.2, uses Explore context)
+  - `pattern-analyzer` (Phase 2.2, uses Explore context)
+  - `architecture-advisor` (Phase 2.2, uses Explore context)
+  - `quality-assurance-expert` (Phase 3a)
+  - `review-critic` (Phase 4)
 
 - **MCP Integration** (orchestrator coordinates):
+  - Explore agent for fast file discovery
   - TaskMaster MCP for task management
-  - JetBrains MCP for file operations  
+  - JetBrains MCP for file operations
   - Sequential MCP for complex debugging
 
 ### **Quality Assurance Integration**
@@ -76,7 +82,7 @@ The workflow-orchestrator manages all subagent coordination including:
 The orchestrator enforces:
 
 - **Local Quality Gates**: Unit tests, lint, build, CUPID validation
-- **Pre-Merge Gates**: Integration tests, architecture compliance  
+- **Pre-Merge Gates**: Integration tests, architecture compliance
 - **Pre-Deploy Gates**: E2E tests, performance, security validation
 
 **Quality Gate Commands** (orchestrator specifies in JSON response):
@@ -84,7 +90,7 @@ The orchestrator enforces:
 # Backend validation
 ./gradlew unitTest integrationTest detekt build
 
-# Frontend validation  
+# Frontend validation
 npm run install lint unitTest build
 ```
 
@@ -105,7 +111,7 @@ After workflow-orchestrator completes guidance:
 
 1. **Verify All Mandatory Subagents Used:**
    - documentation-researcher ✅
-   - pattern-analyzer ✅  
+   - pattern-analyzer ✅
    - architecture-advisor ✅
    - quality-assurance-expert ✅
    - review-critic ✅
