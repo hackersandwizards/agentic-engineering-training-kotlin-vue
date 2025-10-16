@@ -3,7 +3,7 @@ name: review-critic
 description: PROACTIVELY use for comprehensive implementation reviews to verify code matches requirements, architecture patterns, and best practices. Specialist for validating completed implementations against task definitions, architectural decisions, and existing patterns. Also performs quality assurance by checking implementations against specifications, running tests, and ensuring tasks are ready for completion.
 tools: Read, Glob, Grep, Bash, Task, TodoWrite, WebFetch, MultiEdit
 color: orange
-model: sonnet
+model: inherit
 ---
 
 # Purpose

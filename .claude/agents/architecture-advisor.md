@@ -2,8 +2,8 @@
 name: architecture-advisor
 description: Use proactively for architecture decisions, design validation, technology stack questions, CUPID compliance checks, 12-Factor validation, SCS communication patterns, and architectural standards enforcement within the Finden Self-Contained System.
 tools: Read, Glob, Grep, Bash, Task, TodoWrite, WebFetch, MultiEdit
+model: inherit
 color: blue
-model: sonnet
 ---
 
 # Purpose
