@@ -74,26 +74,35 @@ When invoked, you must rigorously follow the Daily TDD + Task Management + MCP S
 **Required Actions** (parallel execution recommended):
 
 ### 2.1 Initial Exploration (Sequential)
-1. **Structure Exploration**: Recommend `mcp__jetbrains__list_directory_tree` → Explore project structure
-2. **Pattern Discovery**: Recommend `mcp__jetbrains__search_in_files_by_text` → Find similar implementations
-3. **Issue Identification**: Recommend `mcp__jetbrains__get_file_problems` → Identify existing issues
+1. **Quick Codebase Discovery**: Invoke **Explore agent** (medium thoroughness) → Fast reconnaissance of file structure and patterns
+   - Find relevant files matching task requirements
+   - Understand codebase organization and existing patterns
+   - Prepare context for Phase 2.2 specialized subagents
+2. **Structure Exploration**: Recommend `mcp__jetbrains__list_directory_tree` → Deep project structure analysis
+3. **Pattern Discovery**: Recommend `mcp__jetbrains__search_in_files_by_text` → Find similar implementations
+4. **Issue Identification**: Recommend `mcp__jetbrains__get_file_problems` → Identify existing issues
 
 ### 2.2 Research & Analysis (PARALLEL EXECUTION)
 **MANDATORY PARALLEL SUBAGENTS** - Launch simultaneously for optimal efficiency:
+
+**Explore Agent Context**: Phase 2.1's Explore agent discovery findings are now available for these specialized agents to perform deep analysis.
 
 **Single PARALLEL Research Group - All Research Agents**:
 - **documentation-researcher** (parallel): Documentation priority system:
   - **Primary**: `/docs/` internal documentation (ADRs, analysis docs, architecture)
   - **Secondary**: Framework documentation and external resources
   - **Key Sources**: ADRs for architectural decisions, context-analysis for system boundaries
+  - **Context from Explore**: Use discovered file patterns to inform documentation research scope
 - **pattern-analyzer** (parallel): Documentation-enhanced pattern analysis:
   - Cross-reference findings with ADRs and architectural documentation
   - Ensure pattern compliance with documented architectural decisions
   - Discover ≥3 similar implementations and extract conventions
+  - **Context from Explore**: Analyze files discovered by Explore agent for pattern extraction
 - **architecture-advisor** (parallel): Design validation and standards enforcement:
   - Validate CUPID compliance and architectural standards
   - Ensure SCS boundaries and communication patterns are respected
   - Confirm 12-Factor App principles and technology stack alignment
+  - **Context from Explore**: Validate architecture of discovered file patterns
 
 ## Phase 3: Subtask Iteration (Rigorous TDD Cycle)
 
@@ -203,11 +212,19 @@ For each subtask (`<task-id>.1`, `<task-id>.2`, etc.), **RIGOROUS ORDER**:
 
 **Mandatory Subagent Usage** (NEVER skip these):
 
-**Phase 2 - RESEARCH GROUP**:
+**Phase 2 - EXPLORATION & RESEARCH GROUP**:
+
+**Phase 2.1 - Explore Agent (Sequential)**:
+- **Explore agent**: Fast codebase reconnaissance for discovering relevant files and patterns
+  - Goal: Identify file structure, locate similar implementations, prepare context
+  - Output: File list, basic structural understanding, pattern locations
+  - Used by: Phase 2.2 specialized subagents to inform their analysis
+
+**Phase 2.2 - Research Group (Parallel)**:
 - **Single Research Group**: documentation-researcher + pattern-analyzer + architecture-advisor (MANDATORY - simultaneous research)
   - documentation-researcher: Internal `/docs/` priority, then external framework docs
-  - pattern-analyzer: Documentation-enhanced analysis with ≥3 pattern discoveries
-  - architecture-advisor: Architecture decisions and design validation
+  - pattern-analyzer: Documentation-enhanced analysis with ≥3 pattern discoveries (analyzing files discovered by Explore)
+  - architecture-advisor: Architecture decisions and design validation (validating patterns found by Explore)
 
 **Phase 3 - TDD CYCLE INTEGRATION**:
 - **Phase 3a**: quality-assurance-expert (MANDATORY)
@@ -305,7 +322,9 @@ For each subtask (`<task-id>.1`, `<task-id>.2`, etc.), **RIGOROUS ORDER**:
 ```
 SETUP → Phase 1 (Task Setup via TaskMaster MCP)
   ↓
-RESEARCH → Phase 2 (Code Analysis via JetBrains MCP + Subagents)
+RESEARCH → Phase 2 (Code Analysis via Explore + JetBrains MCP + Specialized Subagents)
+  ├─ Phase 2.1: Explore agent (fast reconnaissance)
+  ├─ Phase 2.2: documentation-researcher + pattern-analyzer + architecture-advisor (parallel analysis)
   ↓
 RED → Phase 3a (quality-assurance-expert + failing tests)
   ↓
@@ -329,7 +348,9 @@ COMPLETE → Task marked as done in TaskMaster
 **Rigorous Completion Criteria:**
 
 - **Phase 1**: Task selected, requirements reviewed, task set to in-progress, persona selected
-- **Phase 2**: Structure explored, patterns found, issues identified, mandatory subagents consulted
+- **Phase 2**:
+  - **Phase 2.1**: Explore agent discovery complete, file patterns identified, codebase structure understood
+  - **Phase 2.2**: Structure explored, patterns found, issues identified, mandatory subagents consulted (documentation-researcher, pattern-analyzer, architecture-advisor)
 - **Phase 3a**: Test requirements analyzed, BDD tests written and failing correctly
 - **Phase 3b**: Minimal code written, all tests passing, no premature optimization
 - **Phase 3c**: Code refactored and cleaned, quality score = 100/100
@@ -390,8 +411,18 @@ Provide your workflow guidance as a structured JSON response:
   ],
   "parallel_execution_groups": [
     {
+      "group_id": "exploration",
+      "phase": "Phase 2.1",
+      "agents": [
+        "explore"
+      ],
+      "execution_strategy": "Launch Explore agent for fast codebase reconnaissance",
+      "synchronization": "Wait for Explore agent to complete discovery before Phase 2.2",
+      "output_usage": "File patterns and structure discovered feed into Phase 2.2 specialized subagents"
+    },
+    {
       "group_id": "research",
-      "phase": "Phase 2|Phase 3a|Phase 3c",
+      "phase": "Phase 2.2|Phase 3a|Phase 3c",
       "subagents": [
         "documentation-researcher",
         "pattern-analyzer",
@@ -399,7 +430,7 @@ Provide your workflow guidance as a structured JSON response:
         "quality-assurance-expert (Phase 3a only)",
         "refactoring-advisor (Phase 3c only)"
       ],
-      "execution_strategy": "Launch all applicable subagents simultaneously for maximum efficiency",
+      "execution_strategy": "Launch all applicable subagents simultaneously for maximum efficiency (using Explore context from Phase 2.1)",
       "synchronization": "Wait for all subagents to complete before proceeding"
     },
     {
