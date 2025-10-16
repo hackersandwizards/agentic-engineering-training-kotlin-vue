@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.api.expectThrows
 import strikt.assertions.isEqualTo
+import strikt.assertions.isNotEqualTo
 
 @Tag("unit")
 internal class BeschreibungTest {
@@ -111,7 +112,7 @@ internal class BeschreibungTest {
     val beschreibung2 = Beschreibung("Beschreibung 2")
 
     // Then
-    expectThat(beschreibung1 != beschreibung2).isEqualTo(true)
+    expectThat(beschreibung1).isNotEqualTo(beschreibung2)
   }
 
   @Test
