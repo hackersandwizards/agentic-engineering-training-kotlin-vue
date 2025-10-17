@@ -1,7 +1,6 @@
 package de.blume2000.finden.adapter.passive.database.produkte
 
 import de.blume2000.finden.adapter.passive.database.produkte.MongoProdukt.Companion.MONGO_COLLECTION
-import de.blume2000.finden.domain.model.produkte.produkt.Beschreibung
 import de.blume2000.finden.domain.model.produkte.produkt.Bestellschluss
 import de.blume2000.finden.domain.model.produkte.produkt.Klassifikation
 import de.blume2000.finden.domain.model.produkte.produkt.KlassifikationId
