@@ -3,7 +3,6 @@ package de.blume2000.finden.adapter.active.api.tools.produktliste
 import com.mongodb.client.MongoClient
 import de.blume2000.finden.adapter.passive.database.produkte.MongoProdukt
 import de.blume2000.finden.adapter.passive.database.produkte.ProduktMongoRepository
-import de.blume2000.finden.domain.model.produkte.produkt.Beschreibung
 import de.blume2000.finden.domain.model.produkte.produkt.Bestellschluss
 import de.blume2000.finden.domain.model.produkte.produkt.Klassifikation
 import de.blume2000.finden.domain.model.produkte.produkt.KlassifikationId
