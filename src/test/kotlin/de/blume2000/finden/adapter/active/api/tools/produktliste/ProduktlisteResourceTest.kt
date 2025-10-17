@@ -136,7 +136,6 @@ internal class ProduktlisteResourceTest {
       ),
       Klassifikation(KlassifikationId("11"), KlassifikationName("Strauss")), ProduktbildUrl("https://blumenbild.de"),
       ProduktdetailseiteUrlSeoName("ding"),
-      Beschreibung("Ein schönes Produkt"),
       listOf(), listOf(),
       verfügbarkeiten = listOf(nächstmöglicheVerfügbarkeit, letztmöglicheVerfügbarkeit)
     )

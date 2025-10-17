@@ -1,8 +1,8 @@
 package de.blume2000.finden.adapter.passive.database.produkte
 
 import de.blume2000.finden.adapter.passive.database.produkte.MongoProdukt.Companion.MONGO_COLLECTION
-import de.blume2000.finden.domain.model.produkte.produkt.Bestellschluss
 import de.blume2000.finden.domain.model.produkte.produkt.Beschreibung
+import de.blume2000.finden.domain.model.produkte.produkt.Bestellschluss
 import de.blume2000.finden.domain.model.produkte.produkt.Klassifikation
 import de.blume2000.finden.domain.model.produkte.produkt.KlassifikationId
 import de.blume2000.finden.domain.model.produkte.produkt.KlassifikationName
@@ -32,7 +32,6 @@ data class MongoProdukt @BsonCreator constructor(
   @param:BsonProperty("klassifikationId") val klassifikationId: String,
   @param:BsonProperty("bildUrl") val bildUrl: String,
   @param:BsonProperty("pdsUrlSeoName") val pdsUrlSeoName: String,
-  @param:BsonProperty("beschreibung") val beschreibung: String? = null,
   @param:BsonProperty("farben") val farben: List<MongoProduktfarbe>?,
   @param:BsonProperty("blumensorten") val blumensorten: List<MongoBlumensorte>?,
   @param:BsonProperty("verfuegbarkeiten") val verfuegbarkeiten: List<MongoVerfügbarkeit>?,
@@ -50,12 +49,7 @@ data class MongoProdukt @BsonCreator constructor(
       },
       bildUrl = ProduktbildUrl(this.bildUrl),
       pdsUrlSeoName =
-      ProduktdetailseiteUrlSeoName(this.pdsUrlSeoName),
-      beschreibung = if (this.beschreibung != null && this.beschreibung.isNotBlank()) {
-        Beschreibung(this.beschreibung)
-      } else {
-        Beschreibung("Keine Beschreibung verfügbar")
-      },
+        ProduktdetailseiteUrlSeoName(this.pdsUrlSeoName),
       farben = if (this.farben != null) {
         this.farben.map { it.nachProduktfarbe() }
       } else {
@@ -100,7 +94,6 @@ data class MongoProdukt @BsonCreator constructor(
         klassifikationId = produkt.klassifikation.id.value,
         bildUrl = produkt.bildUrl.asString(),
         pdsUrlSeoName = produkt.pdsUrlSeoName.asString(),
-        beschreibung = produkt.beschreibung.asString(),
         farben = produkt.farben.map { MongoProduktfarbe.vonProduktfarbe(it) },
         blumensorten = produkt.blumensorten.map { MongoBlumensorte.vonBlumensorte(it) },
         verfuegbarkeiten = produkt.verfügbarkeiten.map {
