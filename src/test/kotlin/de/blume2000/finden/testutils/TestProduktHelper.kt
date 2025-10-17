@@ -1,6 +1,5 @@
 package de.blume2000.finden.testutils
 
-import de.blume2000.finden.domain.model.produkte.produkt.Beschreibung
 import de.blume2000.finden.domain.model.produkte.produkt.Blumensorte
 import de.blume2000.finden.domain.model.produkte.produkt.Klassifikation
 import de.blume2000.finden.domain.model.produkte.produkt.KlassifikationId
@@ -44,7 +43,6 @@ fun erstelleProdukt(
   klassifikation = klassifikation,
   bildUrl = produktbildUrl,
   pdsUrlSeoName = pdsUrl,
-  beschreibung = Beschreibung(beschreibung),
   farben = farben,
   blumensorten = blumensorten,
   verfügbarkeiten = verfügbarkeiten,
