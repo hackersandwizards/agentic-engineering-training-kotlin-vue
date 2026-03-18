@@ -23,8 +23,8 @@ FILLED="██████████"
 EMPTY="░░░░░░░░░░"
 SEP="${GRAY}|${RESET}"
 
-# Claude Code reserves ~33k tokens for compaction, leaving 83.5% usable.
-USABLE_CONTEXT_PERMILLE=835
+# Claude Code reserves ~33k tokens for compaction, leaving 96.7% usable (1M context).
+USABLE_CONTEXT_PERMILLE=967
 
 # --- Functions --------------------------------------------------------
 
@@ -73,8 +73,8 @@ format_tokens "$tokens_out" fmt_out
 
 bar_idx=$(( pct / 10 ))
 
-if   (( pct >= 76 )); then bar_color=$RED
-elif (( pct >= 51 )); then bar_color=$YELLOW
+if   (( pct >= 31 )); then bar_color=$RED
+elif (( pct >= 21 )); then bar_color=$YELLOW
 else                        bar_color=$GREEN
 fi
 
