@@ -73,8 +73,8 @@ format_tokens "$tokens_out" fmt_out
 
 bar_idx=$(( pct / 10 ))
 
-if   (( pct >= 31 )); then bar_color=$RED
-elif (( pct >= 21 )); then bar_color=$YELLOW
+if   (( pct >= 15 )); then bar_color=$RED
+elif (( pct >= 10 )); then bar_color=$YELLOW
 else                        bar_color=$GREEN
 fi
 
