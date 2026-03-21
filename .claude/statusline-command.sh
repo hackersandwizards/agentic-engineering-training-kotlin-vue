@@ -8,8 +8,6 @@
 # Pure bash. No external commands, no subshells, no file I/O.
 # Runs after every assistant message — keep it fast.
 
-# --- Constants --------------------------------------------------------
-
 ESC=$'\033'
 RESET="${ESC}[0m"
 CYAN="${ESC}[36m"
@@ -22,11 +20,6 @@ GRAY="${ESC}[90m"
 FILLED="██████████"
 EMPTY="░░░░░░░░░░"
 SEP="${GRAY}|${RESET}"
-
-# Context degradation starts at ~147k tokens regardless of model.
-# Thresholds are pre-computed percentages of each model's usable context.
-#   Opus 1M  (967k usable): red=15%, yellow=10%
-#   200k     (194k usable): red=76%, yellow=52%
 
 format_tokens() {
     local count="$1" var="$2"
@@ -56,6 +49,10 @@ else
     cost_dec="00"
 fi
 
+# Context degradation starts at ~147k tokens regardless of model.
+# Thresholds are pre-computed percentages of each model's usable context.
+#   Opus 1M  (967k usable): red=15%, yellow=10%
+#   200k     (194k usable): red=76%, yellow=52%
 if [[ $model == *"1M"* ]]; then
     usable_permille=967 thresh_red=15 thresh_yellow=10
 else
