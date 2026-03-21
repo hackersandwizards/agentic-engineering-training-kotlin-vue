@@ -23,8 +23,12 @@ FILLED="██████████"
 EMPTY="░░░░░░░░░░"
 SEP="${GRAY}|${RESET}"
 
-# Claude Code reserves ~33k tokens for compaction, leaving 96.7% usable (1M context).
-USABLE_CONTEXT_PERMILLE=967
+# Context degradation starts at ~147k tokens regardless of model.
+# Thresholds are pre-computed percentages of each model's usable context.
+#   Opus 1M  (967k usable): red=15%, yellow=10%
+#   200k     (194k usable): red=76%, yellow=52%
+THRESH_RED_1M=15   THRESH_YELLOW_1M=10   USABLE_PERMILLE_1M=967
+THRESH_RED_200K=76 THRESH_YELLOW_200K=52 USABLE_PERMILLE_200K=970
 
 # --- Functions --------------------------------------------------------
 
@@ -60,11 +64,23 @@ else
     cost_dec="00"
 fi
 
+# --- Model detection & thresholds -------------------------------------
+
+if [[ $model == *"1M"* ]]; then
+    usable_permille=$USABLE_PERMILLE_1M
+    thresh_red=$THRESH_RED_1M
+    thresh_yellow=$THRESH_YELLOW_1M
+else
+    usable_permille=$USABLE_PERMILLE_200K
+    thresh_red=$THRESH_RED_200K
+    thresh_yellow=$THRESH_YELLOW_200K
+fi
+
 # --- Format -----------------------------------------------------------
 
 # Rescale so 100% means "compaction imminent" rather than "context full."
 if (( pct > 0 )); then
-    pct=$(( (pct * 1000 + USABLE_CONTEXT_PERMILLE / 2) / USABLE_CONTEXT_PERMILLE ))
+    pct=$(( (pct * 1000 + usable_permille / 2) / usable_permille ))
     (( pct > 100 )) && pct=100
 fi
 
@@ -73,9 +89,9 @@ format_tokens "$tokens_out" fmt_out
 
 bar_idx=$(( pct / 10 ))
 
-if   (( pct >= 15 )); then bar_color=$RED
-elif (( pct >= 10 )); then bar_color=$YELLOW
-else                        bar_color=$GREEN
+if   (( pct >= thresh_red    )); then bar_color=$RED
+elif (( pct >= thresh_yellow )); then bar_color=$YELLOW
+else                                   bar_color=$GREEN
 fi
 
 if (( cost_int >= 5 )); then cost_color=$RED
