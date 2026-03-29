@@ -3,7 +3,7 @@
 # Claude Code Status Line
 #
 # Renders a colored, single-line status bar:
-#   [Project |] [Branch* ↑N ↓N |] [(REBASING 3/7) |] [Agent |] Model | ████░░░░░░ XX% | [████░░░░░░ XX% Xh Xm]
+#   [Project |] [Branch* |] [(REBASING 3/7) |] [↑N↓N |] [Agent |] Model | ████░░░░░░ XX% | [████░░░░░░ XX% Xh Xm]
 #
 # Colors match starship prompt: cyan=directory, gray=branch, red=dirty, yellow=git state.
 # Pure bash + git for branch/status/state.
@@ -120,11 +120,14 @@ out=""
 if [[ -n $branch ]]; then
     out+="${GRAY}${branch}${RESET}"
     [[ -n $dirty ]] && out+="${RED}*${RESET}"
-    [[ -n $ahead ]] && out+=" ${GRAY}↑${ahead}${RESET}"
-    [[ -n $behind ]] && out+=" ${GRAY}↓${behind}${RESET}"
     out+=" ${SEP} "
 fi
 [[ -n $git_state ]] && out+="${YELLOW}(${git_state})${RESET} ${SEP} "
+if [[ -n $ahead || -n $behind ]]; then
+    [[ -n $ahead ]] && out+="${GRAY}↑${ahead}${RESET}"
+    [[ -n $behind ]] && out+="${GRAY}↓${behind}${RESET}"
+    out+=" ${SEP} "
+fi
 [[ -n $agent ]] && out+="${MAGENTA}${agent}${RESET} ${SEP} "
 out+="${CYAN}${model}${RESET}"
 out+=" ${SEP} "
