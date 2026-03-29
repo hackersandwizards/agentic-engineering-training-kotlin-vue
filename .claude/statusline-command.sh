@@ -79,9 +79,15 @@ IFS= read -r -d '' input
 [[ $input =~ \"seven_day\":\{[^}]*\"used_percentage\":([0-9]+) ]] && rl7_pct="${BASH_REMATCH[1]}" || rl7_pct=""
 [[ $input =~ \"seven_day\":\{[^}]*\"resets_at\":([0-9]+) ]] && rl7_resets="${BASH_REMATCH[1]}" || rl7_resets=""
 
-# Git branch + dirty status
+# Git branch + dirty + ahead/behind
 branch=$(git branch --show-current 2>/dev/null)
-[[ -n $branch ]] && dirty=$(git status --porcelain 2>/dev/null | head -1)
+if [[ -n $branch ]]; then
+    git_status=$(git status --porcelain -b 2>/dev/null)
+    [[ $git_status == *$'\n'* ]] && dirty=1 || dirty=""
+    ahead="" behind=""
+    [[ $git_status =~ ahead\ ([0-9]+) ]] && ahead="${BASH_REMATCH[1]}"
+    [[ $git_status =~ behind\ ([0-9]+) ]] && behind="${BASH_REMATCH[1]}"
+fi
 
 # Git state: rebase, merge, cherry-pick, revert, bisect
 # Detected via .git directory files — no extra git commands needed.
@@ -133,6 +139,8 @@ out=""
 if [[ -n $branch ]]; then
     out+="${GRAY}${branch}${RESET}"
     [[ -n $dirty ]] && out+="${RED}*${RESET}"
+    [[ -n $ahead ]] && out+=" ${GRAY}↑${ahead}${RESET}"
+    [[ -n $behind ]] && out+=" ${GRAY}↓${behind}${RESET}"
     out+=" ${SEP} "
 fi
 [[ -n $git_state ]] && out+="${YELLOW}(${git_state})${RESET} ${SEP} "
