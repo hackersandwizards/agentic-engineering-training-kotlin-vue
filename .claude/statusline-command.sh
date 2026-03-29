@@ -6,7 +6,6 @@
 #   [Project |] [Branch* |] [(REBASING 3/7) |] [↑N↓N |] [Agent |] Model | ████░░░░░░ XX% | [████░░░░░░ XX% Xh Xm]
 #
 # Colors match starship prompt: cyan=directory, gray=branch, red=dirty, yellow=git state.
-# Pure bash + git for branch/status/state.
 # Runs after every assistant message — keep it fast.
 
 NOW=$(date +%s)
@@ -32,21 +31,19 @@ format_countdown() {
     fi
 }
 
-# Rate limit time color: is the remaining time enough to survive until the 5h reset?
-#   high usage + long wait = red, high usage + almost reset = green
+# Rate limit time color via printf -v (no subshell).
+# High usage + long wait = red, high usage + almost reset = green.
 time_color() {
-    local pct="$1" secs="$2"
+    local pct="$1" secs="$2" var="$3"
     if (( pct >= 80 )); then
-        if   (( secs > 3600 ));  then echo "$RED"
-        elif (( secs > 1200 ));  then echo "$YELLOW"
-        else                          echo "$GREEN"
+        if   (( secs > 3600 ));  then printf -v "$var" '%s' "$RED"
+        elif (( secs > 1200 ));  then printf -v "$var" '%s' "$YELLOW"
+        else                          printf -v "$var" '%s' "$GREEN"
         fi
-    elif (( pct >= 50 )); then
-        if   (( secs > 7200 ));  then echo "$YELLOW"
-        else                          echo "$GRAY"
-        fi
+    elif (( pct >= 50 && secs > 7200 )); then
+        printf -v "$var" '%s' "$YELLOW"
     else
-        echo "$GRAY"
+        printf -v "$var" '%s' "$GRAY"
     fi
 }
 
@@ -60,44 +57,29 @@ IFS= read -r -d '' input
 [[ $input =~ \"five_hour\":\{[^}]*\"used_percentage\":([0-9]+) ]] && rl5_pct="${BASH_REMATCH[1]}" || rl5_pct=""
 [[ $input =~ \"five_hour\":\{[^}]*\"resets_at\":([0-9]+) ]] && rl5_resets="${BASH_REMATCH[1]}" || rl5_resets=""
 
-# Git branch + dirty + ahead/behind
-branch=$(git branch --show-current 2>/dev/null)
-if [[ -n $branch ]]; then
-    git_status=$(git status --porcelain -b 2>/dev/null)
-    [[ $git_status == *$'\n'* ]] && dirty=1 || dirty=""
-    ahead="" behind=""
-    [[ $git_status =~ ahead\ ([0-9]+) ]] && ahead="${BASH_REMATCH[1]}"
-    [[ $git_status =~ behind\ ([0-9]+) ]] && behind="${BASH_REMATCH[1]}"
-fi
-
-# Git state: rebase, merge, cherry-pick, revert, bisect
-# Detected via .git directory files — no extra git commands needed.
-git_state=""
+# Git: single `git status -b` gives branch, dirty, and ahead/behind.
+# State detection uses .git dir files — no extra commands needed.
+branch="" dirty="" ahead="" behind="" git_state=""
 git_dir=$(git rev-parse --git-dir 2>/dev/null)
 if [[ -n $git_dir ]]; then
+    git_status=$(git status --porcelain -b 2>/dev/null)
+    [[ $git_status =~ ^##\ ([^.$'\n']+) ]] && branch="${BASH_REMATCH[1]%%...*}"
+    [[ $git_status == *$'\n'* ]] && dirty=1
+    [[ $git_status =~ ahead\ ([0-9]+) ]] && ahead="${BASH_REMATCH[1]}"
+    [[ $git_status =~ behind\ ([0-9]+) ]] && behind="${BASH_REMATCH[1]}"
+
     if [[ -d "$git_dir/rebase-merge" ]]; then
-        progress=$(< "$git_dir/rebase-merge/msgnum")
-        total=$(< "$git_dir/rebase-merge/end")
-        git_state="REBASING ${progress}/${total}"
+        git_state="REBASING $(< "$git_dir/rebase-merge/msgnum")/$(< "$git_dir/rebase-merge/end")"
     elif [[ -d "$git_dir/rebase-apply" ]]; then
-        progress=$(< "$git_dir/rebase-apply/next")
-        total=$(< "$git_dir/rebase-apply/last")
-        git_state="REBASING ${progress}/${total}"
-    elif [[ -f "$git_dir/MERGE_HEAD" ]]; then
-        git_state="MERGING"
-    elif [[ -f "$git_dir/CHERRY_PICK_HEAD" ]]; then
-        git_state="CHERRY-PICKING"
-    elif [[ -f "$git_dir/REVERT_HEAD" ]]; then
-        git_state="REVERTING"
-    elif [[ -f "$git_dir/BISECT_LOG" ]]; then
-        git_state="BISECTING"
+        git_state="REBASING $(< "$git_dir/rebase-apply/next")/$(< "$git_dir/rebase-apply/last")"
+    elif [[ -f "$git_dir/MERGE_HEAD" ]]; then       git_state="MERGING"
+    elif [[ -f "$git_dir/CHERRY_PICK_HEAD" ]]; then  git_state="CHERRY-PICKING"
+    elif [[ -f "$git_dir/REVERT_HEAD" ]]; then       git_state="REVERTING"
+    elif [[ -f "$git_dir/BISECT_LOG" ]]; then        git_state="BISECTING"
     fi
 fi
 
-# Context degradation starts at ~147k tokens regardless of model.
-# Thresholds are pre-computed percentages of each model's usable context.
-#   Opus 1M  (967k usable): red=15%, yellow=10%
-#   200k     (194k usable): red=76%, yellow=52%
+# Context: rescale percentage to usable window (degradation starts at ~147k tokens).
 if (( ctx_size >= 1000000 )); then
     usable_permille=967 thresh_red=15 thresh_yellow=10
 else
@@ -115,6 +97,7 @@ elif (( pct >= thresh_yellow )); then bar_color=$YELLOW
 else                                   bar_color=$GREEN
 fi
 
+# Build output
 out=""
 [[ -n $project_dir ]] && out+="${CYAN}${project_dir}${RESET} ${SEP} "
 if [[ -n $branch ]]; then
@@ -140,7 +123,7 @@ if [[ -n $rl5_pct ]]; then
     fi
     rl5_secs=$(( rl5_resets - NOW ))
     format_countdown "$rl5_secs" rl5_time
-    rl5_time_color=$(time_color "$rl5_pct" "$rl5_secs")
+    time_color "$rl5_pct" "$rl5_secs" rl5_time_color
     out+=" ${SEP} "
     out+="${rl5_color}${FILLED:0:rl5_idx}${RESET}${EMPTY:rl5_idx} ${rl5_color}${rl5_pct}%${RESET} ${rl5_time_color}${rl5_time}${RESET}"
 fi
