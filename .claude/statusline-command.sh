@@ -3,9 +3,10 @@
 # Claude Code Status Line
 #
 # Renders a colored, single-line status bar:
-#   [Agent |] Model | ████░░░░░░ XX% | ↑Xk ↓Xk | [████░░░░░░ XX% Xh Xm |] [XX% Xd Xh |] $X.XX
+#   [Project |] [Branch* |] [(REBASING 3/7) |] [Agent |] Model | ████░░░░░░ XX% | [████░░░░░░ XX% Xh Xm |] [XX% Xd Xh]
 #
-# Pure bash. One external command (date +%s for rate limit countdowns).
+# Colors match starship prompt: cyan=directory, gray=branch, red=dirty, yellow=git state.
+# Pure bash + git for branch/status/state.
 # Runs after every assistant message — keep it fast.
 
 NOW=$(date +%s)
@@ -31,23 +32,46 @@ format_countdown() {
     fi
 }
 
-format_tokens() {
-    local count="$1" var="$2"
-    if (( count >= 1000000 )); then
-        printf -v "$var" '%s' "$((count / 1000000)).$((count % 1000000 / 100000))M"
-    elif (( count >= 1000 )); then
-        printf -v "$var" '%s' "$((count / 1000)).$((count % 1000 / 100))k"
+# 5-hour limit time color: is the remaining time enough to survive until reset?
+#   high usage + long wait = red, high usage + almost reset = green
+time_color_5h() {
+    local pct="$1" secs="$2"
+    if (( pct >= 80 )); then
+        if   (( secs > 3600 ));  then echo "$RED"
+        elif (( secs > 1200 ));  then echo "$YELLOW"
+        else                          echo "$GREEN"
+        fi
+    elif (( pct >= 50 )); then
+        if   (( secs > 7200 ));  then echo "$YELLOW"
+        else                          echo "$GRAY"
+        fi
     else
-        printf -v "$var" '%s' "$count"
+        echo "$GRAY"
+    fi
+}
+
+# 7-day limit time color: scaled for the longer window.
+time_color_7d() {
+    local pct="$1" secs="$2"
+    if (( pct >= 80 )); then
+        if   (( secs > 86400 )); then echo "$RED"
+        elif (( secs > 21600 )); then echo "$YELLOW"
+        else                          echo "$GREEN"
+        fi
+    elif (( pct >= 50 )); then
+        if   (( secs > 172800 )); then echo "$YELLOW"
+        else                           echo "$GRAY"
+        fi
+    else
+        echo "$GRAY"
     fi
 }
 
 IFS= read -r -d '' input
 
+[[ $input =~ \"project_dir\":\"([^\"]+)\" ]] && project_dir="${BASH_REMATCH[1]##*/}" || project_dir=""
 [[ $input =~ \"display_name\":\"([^\"]+)\" ]] && model="${BASH_REMATCH[1]}" || model="Claude"
 [[ $input =~ \"used_percentage\":([0-9]+) ]] && pct="${BASH_REMATCH[1]}" || pct=0
-[[ $input =~ \"total_input_tokens\":([0-9]+) ]] && tokens_in="${BASH_REMATCH[1]}" || tokens_in=0
-[[ $input =~ \"total_output_tokens\":([0-9]+) ]] && tokens_out="${BASH_REMATCH[1]}" || tokens_out=0
 [[ $input =~ \"agent\":\{[^}]*\"name\":\"([^\"]+)\" ]] && agent="${BASH_REMATCH[1]}" || agent=""
 [[ $input =~ \"context_window_size\":([0-9]+) ]] && ctx_size="${BASH_REMATCH[1]}" || ctx_size=200000
 [[ $input =~ \"five_hour\":\{[^}]*\"used_percentage\":([0-9]+) ]] && rl5_pct="${BASH_REMATCH[1]}" || rl5_pct=""
@@ -55,13 +79,32 @@ IFS= read -r -d '' input
 [[ $input =~ \"seven_day\":\{[^}]*\"used_percentage\":([0-9]+) ]] && rl7_pct="${BASH_REMATCH[1]}" || rl7_pct=""
 [[ $input =~ \"seven_day\":\{[^}]*\"resets_at\":([0-9]+) ]] && rl7_resets="${BASH_REMATCH[1]}" || rl7_resets=""
 
-# Cost arrives as float "1.234" or integer "0"
-if [[ $input =~ \"total_cost_usd\":([0-9]+)\.([0-9]+) ]]; then
-    cost_int="${BASH_REMATCH[1]}"
-    cost_dec="${BASH_REMATCH[2]}00"
-else
-    [[ $input =~ \"total_cost_usd\":([0-9]+) ]] && cost_int="${BASH_REMATCH[1]}" || cost_int=0
-    cost_dec="00"
+# Git branch + dirty status
+branch=$(git branch --show-current 2>/dev/null)
+[[ -n $branch ]] && dirty=$(git status --porcelain 2>/dev/null | head -1)
+
+# Git state: rebase, merge, cherry-pick, revert, bisect
+# Detected via .git directory files — no extra git commands needed.
+git_state=""
+git_dir=$(git rev-parse --git-dir 2>/dev/null)
+if [[ -n $git_dir ]]; then
+    if [[ -d "$git_dir/rebase-merge" ]]; then
+        progress=$(< "$git_dir/rebase-merge/msgnum")
+        total=$(< "$git_dir/rebase-merge/end")
+        git_state="REBASING ${progress}/${total}"
+    elif [[ -d "$git_dir/rebase-apply" ]]; then
+        progress=$(< "$git_dir/rebase-apply/next")
+        total=$(< "$git_dir/rebase-apply/last")
+        git_state="REBASING ${progress}/${total}"
+    elif [[ -f "$git_dir/MERGE_HEAD" ]]; then
+        git_state="MERGING"
+    elif [[ -f "$git_dir/CHERRY_PICK_HEAD" ]]; then
+        git_state="CHERRY-PICKING"
+    elif [[ -f "$git_dir/REVERT_HEAD" ]]; then
+        git_state="REVERTING"
+    elif [[ -f "$git_dir/BISECT_LOG" ]]; then
+        git_state="BISECTING"
+    fi
 fi
 
 # Context degradation starts at ~147k tokens regardless of model.
@@ -78,9 +121,6 @@ if (( pct > 0 )); then
     (( pct > 100 )) && pct=100
 fi
 
-format_tokens "$tokens_in" fmt_in
-format_tokens "$tokens_out" fmt_out
-
 bar_idx=$(( pct / 10 ))
 
 if   (( pct >= thresh_red    )); then bar_color=$RED
@@ -88,17 +128,18 @@ elif (( pct >= thresh_yellow )); then bar_color=$YELLOW
 else                                   bar_color=$GREEN
 fi
 
-if (( cost_int >= 5 )); then cost_color=$RED
-else                         cost_color=$YELLOW
-fi
-
 out=""
+[[ -n $project_dir ]] && out+="${CYAN}${project_dir}${RESET} ${SEP} "
+if [[ -n $branch ]]; then
+    out+="${GRAY}${branch}${RESET}"
+    [[ -n $dirty ]] && out+="${RED}*${RESET}"
+    out+=" ${SEP} "
+fi
+[[ -n $git_state ]] && out+="${YELLOW}(${git_state})${RESET} ${SEP} "
 [[ -n $agent ]] && out+="${MAGENTA}${agent}${RESET} ${SEP} "
 out+="${CYAN}${model}${RESET}"
 out+=" ${SEP} "
 out+="${bar_color}${FILLED:0:bar_idx}${RESET}${EMPTY:bar_idx} ${bar_color}${pct}%${RESET}"
-out+=" ${SEP} "
-out+="${GRAY}↑${fmt_in} ↓${fmt_out}${RESET}"
 if [[ -n $rl5_pct ]]; then
     rl5_idx=$(( rl5_pct / 10 ))
     if   (( rl5_pct >= 80 )); then rl5_color=$RED
@@ -107,8 +148,9 @@ if [[ -n $rl5_pct ]]; then
     fi
     rl5_secs=$(( rl5_resets - NOW ))
     format_countdown "$rl5_secs" rl5_time
+    rl5_time_color=$(time_color_5h "$rl5_pct" "$rl5_secs")
     out+=" ${SEP} "
-    out+="${rl5_color}${FILLED:0:rl5_idx}${RESET}${EMPTY:rl5_idx} ${rl5_color}${rl5_pct}%${RESET} ${GRAY}${rl5_time}${RESET}"
+    out+="${rl5_color}${FILLED:0:rl5_idx}${RESET}${EMPTY:rl5_idx} ${rl5_color}${rl5_pct}%${RESET} ${rl5_time_color}${rl5_time}${RESET}"
 fi
 if [[ -n $rl7_pct ]] && (( rl7_pct >= 50 )); then
     if (( rl7_pct >= 80 )); then rl7_color=$RED
@@ -116,10 +158,9 @@ if [[ -n $rl7_pct ]] && (( rl7_pct >= 50 )); then
     fi
     rl7_secs=$(( rl7_resets - NOW ))
     format_countdown "$rl7_secs" rl7_time
+    rl7_time_color=$(time_color_7d "$rl7_pct" "$rl7_secs")
     out+=" ${SEP} "
-    out+="${rl7_color}${rl7_pct}%${RESET} ${GRAY}${rl7_time}${RESET}"
+    out+="${rl7_color}${rl7_pct}%${RESET} ${rl7_time_color}${rl7_time}${RESET}"
 fi
-out+=" ${SEP} "
-out+="${cost_color}\$${cost_int}.${cost_dec:0:2}${RESET}"
 
 printf '%s\n' "$out"
