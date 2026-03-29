@@ -6,9 +6,8 @@
 #   [Project |] [Branch* |] [(REBASING 3/7) |] [↑N↓N |] [Agent |] Model | ████░░░░░░ XX% | [████░░░░░░ XX% Xh Xm]
 #
 # Colors match starship prompt: cyan=directory, gray=branch, red=dirty, yellow=git state.
-# Runs after every assistant message — keep it fast.
+# Commonly 1 external command (git status). Extra forks only when needed.
 
-NOW=$(date +%s)
 ESC=$'\033'
 RESET="${ESC}[0m"
 CYAN="${ESC}[36m"
@@ -31,8 +30,6 @@ format_countdown() {
     fi
 }
 
-# Rate limit time color via printf -v (no subshell).
-# High usage + long wait = red, high usage + almost reset = green.
 time_color() {
     local pct="$1" secs="$2" var="$3"
     if (( pct >= 80 )); then
@@ -57,25 +54,31 @@ IFS= read -r -d '' input
 [[ $input =~ \"five_hour\":\{[^}]*\"used_percentage\":([0-9]+) ]] && rl5_pct="${BASH_REMATCH[1]}" || rl5_pct=""
 [[ $input =~ \"five_hour\":\{[^}]*\"resets_at\":([0-9]+) ]] && rl5_resets="${BASH_REMATCH[1]}" || rl5_resets=""
 
-# Git: single `git status -b` gives branch, dirty, and ahead/behind.
-# State detection uses .git dir files — no extra commands needed.
+# Git: one command gives branch, dirty, and ahead/behind.
+# State detection checks .git directory files — no extra commands.
 branch="" dirty="" ahead="" behind="" git_state=""
-git_dir=$(git rev-parse --git-dir 2>/dev/null)
-if [[ -n $git_dir ]]; then
-    git_status=$(git status --porcelain -b 2>/dev/null)
+git_status=$(git status --porcelain -b 2>/dev/null)
+if [[ -n $git_status ]]; then
     [[ $git_status =~ ^##\ ([^.$'\n']+) ]] && branch="${BASH_REMATCH[1]%%...*}"
     [[ $git_status == *$'\n'* ]] && dirty=1
     [[ $git_status =~ ahead\ ([0-9]+) ]] && ahead="${BASH_REMATCH[1]}"
     [[ $git_status =~ behind\ ([0-9]+) ]] && behind="${BASH_REMATCH[1]}"
 
-    if [[ -d "$git_dir/rebase-merge" ]]; then
-        git_state="REBASING $(< "$git_dir/rebase-merge/msgnum")/$(< "$git_dir/rebase-merge/end")"
-    elif [[ -d "$git_dir/rebase-apply" ]]; then
-        git_state="REBASING $(< "$git_dir/rebase-apply/next")/$(< "$git_dir/rebase-apply/last")"
-    elif [[ -f "$git_dir/MERGE_HEAD" ]]; then       git_state="MERGING"
-    elif [[ -f "$git_dir/CHERRY_PICK_HEAD" ]]; then  git_state="CHERRY-PICKING"
-    elif [[ -f "$git_dir/REVERT_HEAD" ]]; then       git_state="REVERTING"
-    elif [[ -f "$git_dir/BISECT_LOG" ]]; then        git_state="BISECTING"
+    # Detect git state via .git dir files. Check common case first, fall back for worktrees.
+    if [[ -d .git ]]; then git_dir=.git
+    elif [[ -f .git ]]; then git_dir=$(git rev-parse --git-dir 2>/dev/null)
+    else git_dir=""
+    fi
+    if [[ -n $git_dir ]]; then
+        if [[ -d "$git_dir/rebase-merge" ]]; then
+            git_state="REBASING $(< "$git_dir/rebase-merge/msgnum")/$(< "$git_dir/rebase-merge/end")"
+        elif [[ -d "$git_dir/rebase-apply" ]]; then
+            git_state="REBASING $(< "$git_dir/rebase-apply/next")/$(< "$git_dir/rebase-apply/last")"
+        elif [[ -f "$git_dir/MERGE_HEAD" ]]; then       git_state="MERGING"
+        elif [[ -f "$git_dir/CHERRY_PICK_HEAD" ]]; then  git_state="CHERRY-PICKING"
+        elif [[ -f "$git_dir/REVERT_HEAD" ]]; then       git_state="REVERTING"
+        elif [[ -f "$git_dir/BISECT_LOG" ]]; then        git_state="BISECTING"
+        fi
     fi
 fi
 
@@ -121,7 +124,7 @@ if [[ -n $rl5_pct ]]; then
     elif (( rl5_pct >= 50 )); then rl5_color=$YELLOW
     else                            rl5_color=$GREEN
     fi
-    rl5_secs=$(( rl5_resets - NOW ))
+    rl5_secs=$(( rl5_resets - $(date +%s) ))
     format_countdown "$rl5_secs" rl5_time
     time_color "$rl5_pct" "$rl5_secs" rl5_time_color
     out+=" ${SEP} "
