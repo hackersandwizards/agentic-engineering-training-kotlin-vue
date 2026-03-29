@@ -37,8 +37,11 @@ time_color() {
         elif (( secs > 1200 ));  then printf -v "$var" '%s' "$YELLOW"
         else                          printf -v "$var" '%s' "$GREEN"
         fi
-    elif (( pct >= 50 && secs > 7200 )); then
-        printf -v "$var" '%s' "$YELLOW"
+    elif (( pct >= 50 )); then
+        if   (( secs > 7200 ));  then printf -v "$var" '%s' "$YELLOW"
+        elif (( secs <= 1800 )); then printf -v "$var" '%s' "$GREEN"
+        else                          printf -v "$var" '%s' "$GRAY"
+        fi
     else
         printf -v "$var" '%s' "$GRAY"
     fi
