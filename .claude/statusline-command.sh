@@ -3,7 +3,7 @@
 # Claude Code Status Line
 #
 # Renders a colored, single-line status bar:
-#   [Project |] [Branch* |] [(REBASING 3/7) |] [Agent |] Model | ████░░░░░░ XX% | [████░░░░░░ XX% Xh Xm |] [XX% Xd Xh]
+#   [Project |] [Branch* ↑N ↓N |] [(REBASING 3/7) |] [Agent |] Model | ████░░░░░░ XX% | [████░░░░░░ XX% Xh Xm]
 #
 # Colors match starship prompt: cyan=directory, gray=branch, red=dirty, yellow=git state.
 # Pure bash + git for branch/status/state.
@@ -32,9 +32,9 @@ format_countdown() {
     fi
 }
 
-# 5-hour limit time color: is the remaining time enough to survive until reset?
+# Rate limit time color: is the remaining time enough to survive until the 5h reset?
 #   high usage + long wait = red, high usage + almost reset = green
-time_color_5h() {
+time_color() {
     local pct="$1" secs="$2"
     if (( pct >= 80 )); then
         if   (( secs > 3600 ));  then echo "$RED"
@@ -50,23 +50,6 @@ time_color_5h() {
     fi
 }
 
-# 7-day limit time color: scaled for the longer window.
-time_color_7d() {
-    local pct="$1" secs="$2"
-    if (( pct >= 80 )); then
-        if   (( secs > 86400 )); then echo "$RED"
-        elif (( secs > 21600 )); then echo "$YELLOW"
-        else                          echo "$GREEN"
-        fi
-    elif (( pct >= 50 )); then
-        if   (( secs > 172800 )); then echo "$YELLOW"
-        else                           echo "$GRAY"
-        fi
-    else
-        echo "$GRAY"
-    fi
-}
-
 IFS= read -r -d '' input
 
 [[ $input =~ \"project_dir\":\"([^\"]+)\" ]] && project_dir="${BASH_REMATCH[1]##*/}" || project_dir=""
@@ -76,8 +59,6 @@ IFS= read -r -d '' input
 [[ $input =~ \"context_window_size\":([0-9]+) ]] && ctx_size="${BASH_REMATCH[1]}" || ctx_size=200000
 [[ $input =~ \"five_hour\":\{[^}]*\"used_percentage\":([0-9]+) ]] && rl5_pct="${BASH_REMATCH[1]}" || rl5_pct=""
 [[ $input =~ \"five_hour\":\{[^}]*\"resets_at\":([0-9]+) ]] && rl5_resets="${BASH_REMATCH[1]}" || rl5_resets=""
-[[ $input =~ \"seven_day\":\{[^}]*\"used_percentage\":([0-9]+) ]] && rl7_pct="${BASH_REMATCH[1]}" || rl7_pct=""
-[[ $input =~ \"seven_day\":\{[^}]*\"resets_at\":([0-9]+) ]] && rl7_resets="${BASH_REMATCH[1]}" || rl7_resets=""
 
 # Git branch + dirty + ahead/behind
 branch=$(git branch --show-current 2>/dev/null)
@@ -156,19 +137,9 @@ if [[ -n $rl5_pct ]]; then
     fi
     rl5_secs=$(( rl5_resets - NOW ))
     format_countdown "$rl5_secs" rl5_time
-    rl5_time_color=$(time_color_5h "$rl5_pct" "$rl5_secs")
+    rl5_time_color=$(time_color "$rl5_pct" "$rl5_secs")
     out+=" ${SEP} "
     out+="${rl5_color}${FILLED:0:rl5_idx}${RESET}${EMPTY:rl5_idx} ${rl5_color}${rl5_pct}%${RESET} ${rl5_time_color}${rl5_time}${RESET}"
-fi
-if [[ -n $rl7_pct ]] && (( rl7_pct >= 50 )); then
-    if (( rl7_pct >= 80 )); then rl7_color=$RED
-    else                          rl7_color=$YELLOW
-    fi
-    rl7_secs=$(( rl7_resets - NOW ))
-    format_countdown "$rl7_secs" rl7_time
-    rl7_time_color=$(time_color_7d "$rl7_pct" "$rl7_secs")
-    out+=" ${SEP} "
-    out+="${rl7_color}${rl7_pct}%${RESET} ${rl7_time_color}${rl7_time}${RESET}"
 fi
 
 printf '%s\n' "$out"
