@@ -193,7 +193,7 @@ npm run unitTest -- -u             # Update test snapshots
 
 ### Principle 0: Radical Candor—Truth Above All
 
-**ABSOLUTE TRUTHFULNESS**: State only verified facts | NEVER simulate functionality without explicit approval
+**ABSOLUTE TRUTHFULNESS**: State only verified facts | Flag simulated functionality and get explicit approval before shipping it
 **EVIDENCE-BASED**: >90% confidence → proceed | 70-90% → state uncertainty | <70% → request clarification
 **NO ILLUSIONS**: API doesn't exist? System inaccessible? → State facts clearly, request clarification
 
@@ -202,16 +202,16 @@ npm run unitTest -- -u             # Update test snapshots
 **TDD Cycle**: RED (failing test) → GREEN (minimal code) → REFACTOR → repeat continuously
 **Quality Formula**: Functionality (40%) + Integration (30%) + Code Quality (20%) + Performance (10%) = 100/100
 **Rule**: Score < 100 → document gaps → write failing test → repeat until perfect
-**🎯 NEVER STOP UNTIL**: All tests pass | 100/100 achieved | User intent perfectly matched
+**🎯 Run to completion**: all tests green | 100/100 achieved | user intent perfectly matched
 
 ### Goal Persistence Protocol
 
-**DON'T STOP UNTIL ACHIEVED**:
+**Completion targets** (carry work through to each one):
 
 - Test coverage reaches required thresholds (80% unit, 70% integration, 100% critical)
 - All quality gates pass (local, pre-merge, pre-deploy)
 - Performance metrics met (P95 < 300ms, Core Web Vitals green)
-- Security validations complete (no vulnerabilities, GDPR compliant)
+- Security validations complete (vulnerability-free, GDPR compliant)
 
 **COMPLETION CRITERIA**: Task incomplete until → Tests pass → Integration verified → Quality validated → Performance confirmed → Security checked → 100/100 achieved
 
@@ -263,7 +263,7 @@ npm run unitTest -- -u             # Update test snapshots
 
 ### Core Principles
 
-1. **One Feature at a Time**: Complete single feature before next | NO FEATURE CREEP | DON'T STOP until feature complete
+1. **One Feature at a Time**: Complete a single feature before starting the next | Defer scope creep | Carry each feature through to completion
 2. **Fail Fast**: Proactive failure detection → Test edge cases → Aggressive validation
 3. **Measure First**: Functionality before optimization | NO PREMATURE OPTIMIZATION
 4. **Optimize for Clarity**: Every instruction must be unambiguous and actionable
@@ -286,20 +286,20 @@ npm run unitTest -- -u             # Update test snapshots
 
 **Complete Analysis**: Use `Task --subagent_type pattern-analyzer` for comprehensive pattern discovery and conformance guidance.
 
-### 🚨 Red Flags (STOP Immediately)
+### 🚨 Catch-yourself Cues — pause and redirect
 
-**Development Anti-Patterns**:
+When one of these thoughts surfaces, run the paired action before continuing:
 
-- "Let me create a mock" → Verify real integration first
-- "I'll assume this API works" → Test actual behavior
-- "This should be good enough" → Achieve 100/100 standard
-- "Skip tests for now" → TDD is mandatory
-- Writing >30 lines without tests → Run tests continuously
-- "I'll skip workflow orchestration" → ALWAYS use workflow-orchestrator subagent first
-- "I'll manually manage subagents" → Let workflow-orchestrator coordinate all subagents
-- "I'll bypass the systematic workflow" → Follow orchestrator's phase guidance
-- "Skipping orchestration" → Check workflow-orchestrator decision tree
-- **🚨 CRITICAL**: "Task is complete" without calling workflow-orchestrator → **MANDATORY** orchestrator call for next step guidance
+- "Let me create a mock" → verify real integration first
+- "I'll assume this API works" → test actual behavior
+- "This should be good enough" → reach the 100/100 standard
+- "Skip tests for now" → write the failing test first
+- Writing >30 lines without tests → break and run tests
+- "I'll skip workflow orchestration" → call the workflow-orchestrator subagent first
+- "I'll manually manage subagents" → route coordination through the workflow-orchestrator
+- "I'll bypass the systematic workflow" → follow the orchestrator's phase guidance
+- "Skipping orchestration" → consult the workflow-orchestrator decision tree
+- **🚨 CRITICAL**: Before declaring a task complete, call the workflow-orchestrator for next-step guidance
 
 ## 🛡️ Security & Quality
 
@@ -374,16 +374,16 @@ Needed Deep Analysis?
 
 ### AI Behavior & Context Management
 
-**🤖 AI Rules**: Never assume context (ask questions) | Never hallucinate libraries (verify first) | Confirm paths/classes exist | Mark tasks complete immediately | Document blockers | **🚨 CRITICAL: ALWAYS call workflow-orchestrator after task completion for next step guidance**
+**🤖 AI Rules**: Ask questions before assuming context | Verify libraries exist before using them | Confirm paths/classes exist | Mark tasks complete immediately | Document blockers | **🚨 CRITICAL: ALWAYS call workflow-orchestrator after task completion for next step guidance**
 
 **GUIDING PRINCIPLES**:
 
 - **Brutal Honesty First**: State uncertainties, blockers, and failures immediately
-- **Test Driven Development**: Never write code without failing test first
+- **Test Driven Development**: Every change starts with a failing test
 - **One Feature at a Time**: Complete current task before starting next
-- **Break Things Internally**: Fail fast in development, never in production
+- **Break Things Internally**: Fail fast in development so production stays green
 - **Optimize Only After It Works**: Functionality first, optimization second
-- **Never Mark Complete Until Perfect**: 100/100 or document why not
+- **Ship at 100/100**: deliver a perfect pass or document the gap explicitly
 - **Maintain Full Context**: Preserve all relevant information across operations
 
 **Context Optimization**:
