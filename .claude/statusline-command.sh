@@ -162,10 +162,8 @@ if (( ctx_size >= 1000000 )); then
 else
     usable_permille=$CTX_USABLE_PERMILLE_200K thresh_red=$CTX_RED_200K  thresh_yellow=$CTX_YELLOW_200K
 fi
-if (( pct > 0 )); then
-    pct=$(( (pct * 1000 + usable_permille / 2) / usable_permille ))
-    (( pct > 100 )) && pct=100
-fi
+pct=$(( (pct * 1000 + usable_permille / 2) / usable_permille ))
+(( pct > 100 )) && pct=100
 
 bar_idx=$(( pct / 10 ))
 pct_color "$pct" "$thresh_red" "$thresh_yellow" bar_color
