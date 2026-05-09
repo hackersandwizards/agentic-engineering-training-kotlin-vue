@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2154
+# (extract/pct_color/time_color/render_bar all assign via `printf -v "$var"`,
+#  which shellcheck can't trace — so it flags every consumer as unset.)
 #
 # Claude Code Status Line
 #
@@ -52,6 +55,22 @@ format_countdown() {
     fi
 }
 
+# Capture group 1 of $pat from $src (default: $input) into $var; fall back to $def.
+extract() {
+    local pat="$1" var="$2" def="$3" src="${4-$input}"
+    if [[ $src =~ $pat ]]; then printf -v "$var" '%s' "${BASH_REMATCH[1]}"
+    else                        printf -v "$var" '%s' "$def"
+    fi
+}
+
+# Render "[colored filled][empty] [colored pct%]" into $var.
+render_bar() {
+    local color="$1" idx="$2" pct="$3" var="$4"
+    printf -v "$var" '%s%s%s%s %s%s%%%s' \
+        "$color" "${FILLED:0:idx}" "$RESET" "${EMPTY:idx}" \
+        "$color" "$pct" "$RESET"
+}
+
 pct_color() {
     local pct="$1" red="$2" yellow="$3" var="$4"
     if   (( pct >= red    )); then printf -v "$var" '%s' "$RED"
@@ -87,17 +106,19 @@ IFS= read -r -d '' input
 # bash 5+ exposes $EPOCHSECONDS as a no-fork builtin; `date +%s` is the bash 3-4 fallback.
 now=${EPOCHSECONDS:-$(date +%s)}
 
-[[ $input =~ \"project_dir\":\"([^\"]+)\" ]] && project_dir="${BASH_REMATCH[1]##*/}" || project_dir=""
-[[ $input =~ \"display_name\":\"([^\"]+)\" ]] && model="${BASH_REMATCH[1]}" || model="Claude"
-# `used_percentage` appears in context_window AND in rate_limits.{five_hour,seven_day}.
-# Strip rate_limits before matching so we always read the context-window value.
+extract '"project_dir":"([^"]+)"'                       project_dir ""
+project_dir="${project_dir##*/}"
+extract '"display_name":"([^"]+)"'                      model       "Claude"
+extract '"agent":\{[^}]*"name":"([^"]+)"'               agent       ""
+extract '"context_window_size":([0-9]+)'                ctx_size    200000
+extract '"effort":\{[^}]*"level":"([^"]+)"'             effort      ""
+extract '"five_hour":\{[^}]*"used_percentage":([0-9]+)' rl5_pct     ""
+extract '"five_hour":\{[^}]*"resets_at":([0-9]+)'       rl5_resets  ""
+
+# `used_percentage` appears in both context_window and rate_limits.{five_hour,seven_day}.
+# Strip rate_limits first so we always match the context-window number.
 ctx_only="${input%%\"rate_limits\"*}"
-[[ $ctx_only =~ \"used_percentage\":([0-9]+) ]] && pct="${BASH_REMATCH[1]}" || pct=0
-[[ $input =~ \"agent\":\{[^}]*\"name\":\"([^\"]+)\" ]] && agent="${BASH_REMATCH[1]}" || agent=""
-[[ $input =~ \"context_window_size\":([0-9]+) ]] && ctx_size="${BASH_REMATCH[1]}" || ctx_size=200000
-[[ $input =~ \"effort\":\{[^}]*\"level\":\"([^\"]+)\" ]] && effort="${BASH_REMATCH[1]}" || effort=""
-[[ $input =~ \"five_hour\":\{[^}]*\"used_percentage\":([0-9]+) ]] && rl5_pct="${BASH_REMATCH[1]}" || rl5_pct=""
-[[ $input =~ \"five_hour\":\{[^}]*\"resets_at\":([0-9]+) ]] && rl5_resets="${BASH_REMATCH[1]}" || rl5_resets=""
+extract '"used_percentage":([0-9]+)'                    pct         0       "$ctx_only"
 
 # Find .git in $PWD or an ancestor without forking; resolve worktree pointer files inline.
 git_dir="" git_state=""
@@ -184,15 +205,16 @@ if [[ -n $effort ]]; then
     out+=" ${SEP} "
 fi
 
-out+="${bar_color}${FILLED:0:bar_idx}${RESET}${EMPTY:bar_idx} ${bar_color}${pct}%${RESET}"
+render_bar "$bar_color" "$bar_idx" "$pct" ctx_bar
+out+="$ctx_bar"
 if [[ -n $rl5_pct ]]; then
     rl5_idx=$(( rl5_pct / 10 ))
     pct_color "$rl5_pct" "$RL5_RED" "$RL5_YELLOW" rl5_color
     rl5_secs=$(( rl5_resets - now ))
     format_countdown "$rl5_secs" rl5_time
     time_color "$rl5_pct" "$rl5_secs" rl5_time_color
-    out+=" ${SEP} "
-    out+="${rl5_color}${FILLED:0:rl5_idx}${RESET}${EMPTY:rl5_idx} ${rl5_color}${rl5_pct}%${RESET} ${rl5_time_color}${rl5_time}${RESET}"
+    render_bar "$rl5_color" "$rl5_idx" "$rl5_pct" rl5_bar
+    out+=" ${SEP} ${rl5_bar} ${rl5_time_color}${rl5_time}${RESET}"
 fi
 
 # Service status: background curl every 5min stores just the Claude Code component
