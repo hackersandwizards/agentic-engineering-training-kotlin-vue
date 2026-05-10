@@ -27,5 +27,8 @@
       }
     ]
   },
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "model": "opusplan",
+  "advisorModel": "opus",
+  "effortLevel": "xhigh"
 }
