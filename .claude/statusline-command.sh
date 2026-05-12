@@ -188,7 +188,7 @@ if [[ -n $ahead || -n $behind ]]; then
     out+=" ${SEP} "
 fi
 
-[[ -n $agent ]] && out+="${MAGENTA}${agent}${RESET} ${SEP} "
+[[ -n $agent ]] && out+="${ORANGE}${agent}${RESET} ${SEP} "
 out+="${CYAN}${model}${RESET}"
 out+=" ${SEP} "
 if [[ -n $effort ]]; then
