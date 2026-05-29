@@ -34,11 +34,17 @@ FILLED="██████████"
 EMPTY="░░░░░░░░░░"
 SEP="${GRAY}|${RESET}"
 
-# Context window: rescale raw % to "usable %" by subtracting the autocompact reserve.
-# 200k window: 167k usable (~83.5%); 1M window: 967k usable (~96.7%).
-# thresh_red / thresh_yellow are the rescaled thresholds at which the bar turns red/yellow.
-CTX_USABLE_PERMILLE_200K=835  CTX_RED_200K=76  CTX_YELLOW_200K=52
-CTX_USABLE_PERMILLE_1M=967    CTX_RED_1M=15    CTX_YELLOW_1M=10
+# Context window: Claude reports "% context used" against the auto-compact threshold,
+# not the full window. As of cli v2.1.156 the threshold is:
+#   context_window_size − reservedForSummary − 13000(buffer)
+# where reservedForSummary = min(maxOutputTokens, 20000) and the default maxOutput is
+# capped at 8000, so the reserve is a fixed 8000 + 13000 = 21000 tokens. It's a token
+# count (not a %), so the same value is correct for any window size (200k, 1M, …).
+# Not exposed in the statusline JSON — re-sync this if Anthropic changes the constants.
+CTX_RESERVE_TOKENS=21000
+# % of the usable window at which the context bar turns red / yellow (how far toward
+# auto-compact we are). Percentage-based, so the same pair holds for any window size.
+CTX_BAR_RED=76  CTX_BAR_YELLOW=52
 
 # 5-hour rate limit thresholds (raw %, no rescaling).
 RL5_RED=80   RL5_YELLOW=50
@@ -115,10 +121,15 @@ extract '"effort":\{[^}]*"level":"([^"]+)"'             effort      ""
 extract '"five_hour":\{[^}]*"used_percentage":([0-9]+)' rl5_pct     ""
 extract '"five_hour":\{[^}]*"resets_at":([0-9]+)'       rl5_resets  ""
 
-# `used_percentage` appears in both context_window and rate_limits.{five_hour,seven_day}.
-# Strip rate_limits first so we always match the context-window number.
+# Context usage: sum the live token counts from context_window.current_usage
+# (input + cache_creation + cache_read — Claude excludes output_tokens). Strip rate_limits
+# first so the token regexes only ever see the context-window block. "input_tokens" does
+# not match inside "total_input_tokens"/"cache_*_input_tokens" (no leading quote there).
 ctx_only="${input%%\"rate_limits\"*}"
-extract '"used_percentage":([0-9]+)'                    pct         0       "$ctx_only"
+extract '"input_tokens":([0-9]+)'                tok_input  0  "$ctx_only"
+extract '"cache_creation_input_tokens":([0-9]+)' tok_cc     0  "$ctx_only"
+extract '"cache_read_input_tokens":([0-9]+)'     tok_cr     0  "$ctx_only"
+tokens=$(( tok_input + tok_cc + tok_cr ))
 
 # Find .git in $PWD or an ancestor without forking; resolve worktree pointer files inline.
 git_dir="" git_state=""
@@ -157,16 +168,18 @@ if [[ -n $git_dir ]]; then
     fi
 fi
 
-if (( ctx_size >= 1000000 )); then
-    usable_permille=$CTX_USABLE_PERMILLE_1M   thresh_red=$CTX_RED_1M    thresh_yellow=$CTX_YELLOW_1M
+# "% context used" exactly as Claude renders it: round against the usable window
+# (full window minus the auto-compact reserve), mirroring 100 − round(remaining/usable).
+usable=$(( ctx_size - CTX_RESERVE_TOKENS ))
+(( usable < 1 )) && usable=1
+if (( tokens >= usable )); then
+    pct=100
 else
-    usable_permille=$CTX_USABLE_PERMILLE_200K thresh_red=$CTX_RED_200K  thresh_yellow=$CTX_YELLOW_200K
+    pct=$(( 100 - ( ( (usable - tokens) * 100 + usable / 2 ) / usable ) ))
 fi
-pct=$(( (pct * 1000 + usable_permille / 2) / usable_permille ))
-(( pct > 100 )) && pct=100
 
 bar_idx=$(( pct / 10 ))
-pct_color "$pct" "$thresh_red" "$thresh_yellow" bar_color
+pct_color "$pct" "$CTX_BAR_RED" "$CTX_BAR_YELLOW" bar_color
 
 # --- Build output ---
 # Convention: trailing " ${SEP} " on a section means "more sections may follow."
