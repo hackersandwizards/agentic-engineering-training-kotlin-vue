@@ -230,10 +230,15 @@ fi
 
 # Service status: background curl every 5min stores just the Claude Code component
 # status string (~20 bytes), so the hot path doesn't have to regex a 30 KB summary JSON.
-status_cache="/tmp/claude-statusline-status.cc"
-status_expiry_file="/tmp/claude-statusline-status.expiry"
+# $TMPDIR is a private, per-user dir on macOS (mode 700); prefer it over the
+# world-writable /tmp so another user can't pre-create or symlink the cache path.
+status_dir="${TMPDIR:-/tmp}"
+status_cache="${status_dir%/}/claude-statusline-status.cc"
+status_expiry_file="${status_dir%/}/claude-statusline-status.expiry"
 status_expiry=0
-read -r status_expiry < "$status_expiry_file" 2>/dev/null
+# Guard the read: `< missing 2>/dev/null` still leaks an "No such file" error
+# because the input redirect is opened before 2>/dev/null takes effect.
+[[ -f "$status_expiry_file" ]] && read -r status_expiry < "$status_expiry_file"
 [[ $status_expiry =~ ^[0-9]+$ ]] || status_expiry=0
 if (( now >= status_expiry )); then
     # Pre-write next expiry so parallel renders don't all spawn fetches; also
