@@ -38,7 +38,7 @@
     ]
   },
   "enableAllProjectMcpServers": true,
-  "model": "opus",
+  "model": "sonnet",
 
   "effortLevel": "high"
 }
