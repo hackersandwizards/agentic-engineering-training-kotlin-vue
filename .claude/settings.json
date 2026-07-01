@@ -40,5 +40,5 @@
   "enableAllProjectMcpServers": true,
   "model": "sonnet",
 
-  "effortLevel": "high"
+  "effortLevel": "medium"
 }
