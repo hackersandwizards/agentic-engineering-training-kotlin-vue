@@ -281,3 +281,7 @@ quarkus:
 Zusätzlich muss noch die DSN per Umgebungsvariable in die GitLab CI hinzugefügt werden. Diese lautet `TF_VAR_sentry_dsn`
 und hat den Inhalt der Error Tracking DSN aus GitLab. Die DSN wird automatisch von Terraform in der Backend Instanz
 verfügbar gemacht.
+
+## Lizenz
+
+PolyForm Strict License 1.0.0, dazu eine Erlaubnis für Teilnehmende eines Trainings und ihren Arbeitgeber und eine für Trainer von hackers&wizards, siehe [LICENSE](LICENSE).
